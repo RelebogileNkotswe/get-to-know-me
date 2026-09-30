@@ -40,23 +40,24 @@ model User {
   @@map("users")
 }
 
-/// A Get To Know Me profile. Empty text fields are stored as empty strings, matching the form.
+/// A Get To Know Me profile. A field that was not entered is null; which fields are required is still to be decided.
 model Profile {
   id                   String        @id @default(uuid(7)) @db.Uuid
   /// Trimmed, lowercased and @singular.co.za only (enforced by a check constraint). Links the profile to a user.
   companyEmail         String        @unique @map("company_email")
-  firstName            String        @default("") @map("first_name")
-  lastName             String        @default("") @map("last_name")
-  preferredName        String        @default("") @map("preferred_name")
-  position             String        @default("")
+  firstName            String?       @map("first_name")
+  lastName             String?       @map("last_name")
+  preferredName        String?       @map("preferred_name")
+  position             String?
   startDate            DateTime?     @map("start_date") @db.Date
-  linkedIn             String        @default("") @map("linked_in")
+  /// Optional; hidden on the profile when null.
+  linkedIn             String?       @map("linked_in")
   /// Section "Beyond the office gates".
-  hobbies              String        @default("")
+  hobbies              String?
   /// Section "Beyond the bio".
-  somethingInteresting String        @default("") @map("something_interesting")
+  somethingInteresting String?       @map("something_interesting")
   /// Section "Educational & professional background".
-  background           String        @default("")
+  background           String?
   /// Storage key of the compressed photo; the storage service is chosen in phase 4.
   photoKey             String?       @map("photo_key")
   status               ProfileStatus @default(published)

@@ -6,6 +6,7 @@ import { PrismaClient } from "./generated/client";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// Fields that were not entered are null, as in the real data.
 const sampleProfiles = [
     {
         companyEmail: "sample1@singular.co.za",
@@ -23,10 +24,10 @@ const sampleProfiles = [
         companyEmail: "sample2@singular.co.za",
         firstName: "Sample",
         lastName: "Two",
-        preferredName: "",
+        preferredName: null,
         position: "Analyst",
         startDate: "2026-10-05",
-        linkedIn: "",
+        linkedIn: null,
         hobbies: "Chess",
         somethingInteresting: "Speaks three languages",
         background: "BCom Finance",
@@ -38,7 +39,7 @@ const sampleProfiles = [
         preferredName: "Sammy",
         position: "Designer",
         startDate: "2026-10-12",
-        linkedIn: "",
+        linkedIn: null,
         hobbies: "Painting",
         somethingInteresting: "Cycled across a country",
         background: "Diploma in Design",
@@ -47,10 +48,10 @@ const sampleProfiles = [
         companyEmail: "sample5@singular.co.za",
         firstName: "Sample",
         lastName: "Five",
-        preferredName: "",
+        preferredName: null,
         position: "Project Manager",
         startDate: "2025-03-01",
-        linkedIn: "",
+        linkedIn: null,
         hobbies: "Hiking",
         somethingInteresting: "Keeps bees",
         background: "BA Honours",

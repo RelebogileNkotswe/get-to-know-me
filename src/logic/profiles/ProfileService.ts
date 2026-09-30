@@ -14,21 +14,22 @@ function toIsoDate(value: Date | null): string {
 }
 
 function fullName(profile: Profile): string {
-    return `${profile.firstName} ${profile.lastName}`.trim() || profile.companyEmail;
+    return `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || profile.companyEmail;
 }
 
+// The form works with strings, so a field that was not entered (null) becomes an empty string.
 function toFormValues(profile: Profile): IProfileFormValues {
     return {
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        preferredName: profile.preferredName,
-        position: profile.position,
+        firstName: profile.firstName ?? "",
+        lastName: profile.lastName ?? "",
+        preferredName: profile.preferredName ?? "",
+        position: profile.position ?? "",
         startDate: toIsoDate(profile.startDate),
         companyEmail: profile.companyEmail,
-        linkedIn: profile.linkedIn,
-        hobbies: profile.hobbies,
-        somethingInteresting: profile.somethingInteresting,
-        background: profile.background,
+        linkedIn: profile.linkedIn ?? "",
+        hobbies: profile.hobbies ?? "",
+        somethingInteresting: profile.somethingInteresting ?? "",
+        background: profile.background ?? "",
     };
 }
 
@@ -64,7 +65,7 @@ export const profileService: IProfileService = {
             id: profile.id,
             name: fullName(profile),
             email: profile.companyEmail,
-            position: profile.position || null,
+            position: profile.position,
             startDate: toIsoDate(profile.startDate) || null,
             hasProfile: true,
             hasAccount: userEmails.has(profile.companyEmail),
@@ -94,7 +95,7 @@ export const profileService: IProfileService = {
         return profiles.map((profile: Profile) => ({
             id: profile.id,
             name: fullName(profile),
-            position: profile.position,
+            position: profile.position ?? "",
             startDate: toIsoDate(profile.startDate),
         }));
     },
