@@ -6,24 +6,21 @@ import type { EmployeeView, IEmployee } from "../models/Employee";
 import EmployeeToolbar from "./EmployeeToolbar";
 import PersonCell from "./PersonCell";
 
-// TODO: replace with published profiles loaded from the API once it exists.
-const sampleEmployees: IEmployee[] = [
-    { id: "1", name: "Sample Employee 1", position: "Developer", startDate: "2026-09-14" },
-    { id: "2", name: "Sample Employee 2", position: "Analyst", startDate: "2026-10-05" },
-    { id: "3", name: "Sample Employee 3", position: "Designer", startDate: "2026-10-12" },
-    { id: "4", name: "Sample Employee 4", position: "Project Manager", startDate: "2025-03-01" },
-];
+interface IEmployeesViewProps {
+    /** Published profiles, loaded on the server. */
+    employees: IEmployee[];
+}
 
 /**
  * Employee list page body: the toolbar plus the employees shown as a table or as cards.
  */
-export default function EmployeesView() {
+export default function EmployeesView({ employees }: IEmployeesViewProps) {
     const [search, setSearch] = useState<string>("");
     const [startDate, setStartDate] = useState<string>("");
     const [view, setView] = useState<EmployeeView>("list");
 
     const searchText: string = search.trim().toLowerCase();
-    const visibleEmployees: IEmployee[] = sampleEmployees.filter((employee: IEmployee) => {
+    const visibleEmployees: IEmployee[] = employees.filter((employee: IEmployee) => {
         const matchesSearch: boolean =
             searchText === "" ||
             employee.name.toLowerCase().includes(searchText) ||

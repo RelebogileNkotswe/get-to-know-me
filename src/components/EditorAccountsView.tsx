@@ -11,54 +11,19 @@ import EditorToolbar from "./EditorToolbar";
 import Icon from "./Icon";
 import PersonCell from "./PersonCell";
 
-// TODO: replace with accounts and profiles loaded from the API once it exists.
-const sampleAccounts: IEditorAccount[] = [
-    {
-        id: "1",
-        name: "Sample Employee 1",
-        email: "sample1@singular.co.za",
-        position: "Developer",
-        startDate: "2026-09-14",
-        hasProfile: true,
-        hasAccount: true,
-    },
-    {
-        id: "2",
-        name: "Sample Employee 2",
-        email: "sample2@singular.co.za",
-        position: "Analyst",
-        startDate: "2026-10-05",
-        hasProfile: true,
-        hasAccount: false,
-    },
-    {
-        id: "3",
-        name: "Sample Employee 3",
-        email: "sample3@singular.co.za",
-        position: "Designer",
-        startDate: "2026-10-12",
-        hasProfile: true,
-        hasAccount: false,
-    },
-    {
-        id: "4",
-        name: "Sample Employee 4",
-        email: "sample4@example.com",
-        position: null,
-        startDate: null,
-        hasProfile: false,
-        hasAccount: true,
-    },
-];
+interface IEditorAccountsViewProps {
+    /** Profiles and accounts, loaded on the server. */
+    initialAccounts: IEditorAccount[];
+}
 
 /**
  * Editor page body: the toolbar plus a table of accounts and their profile and account status.
  */
-export default function EditorAccountsView() {
+export default function EditorAccountsView({ initialAccounts }: IEditorAccountsViewProps) {
     const [search, setSearch] = useState<string>("");
     const [status, setStatus] = useState<AccountStatusFilter>("all");
     const [startDate, setStartDate] = useState<string>("");
-    const [accounts, setAccounts] = useState<IEditorAccount[]>(sampleAccounts);
+    const [accounts, setAccounts] = useState<IEditorAccount[]>(initialAccounts);
     const [pendingDelete, setPendingDelete] = useState<IEditorAccount | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
 
@@ -69,7 +34,7 @@ export default function EditorAccountsView() {
             return;
         }
         const target: IEditorAccount = pendingDelete;
-        // TODO: delete the profile through the API once it exists; this only changes the sample data on this page.
+        // TODO: delete the profile through the API once it exists; this only changes the list on this page.
         setAccounts((current: IEditorAccount[]) =>
             target.hasAccount
                 ? current.map((account: IEditorAccount) =>
