@@ -25,7 +25,16 @@ A Next.js web application with a DaisyUI front end, written in TypeScript.
 
 Install [Volta](https://volta.sh) so the pinned Node version (22) is used automatically inside this repo, or use any tool that reads `.nvmrc`.
 
-You also need Docker (Docker Desktop or Rancher Desktop with the `moby` engine) for the local database.
+You also need Docker (Docker Desktop or Rancher Desktop with the `moby` engine) for the local database. The Docker daemon must be running before `npm run db:up`.
+
+Starting Rancher Desktop from the command line (no GUI), with the `moby` engine and Kubernetes off:
+
+```powershell
+rdctl start --container-engine.name=moby --kubernetes.enabled=false --application.start-in-background
+docker ps    # succeeds once the daemon is up
+```
+
+`rdctl` ships with Rancher Desktop (`%LOCALAPPDATA%\Programs\Rancher Desktop\resources\resources\win32\bin`). Rancher Desktop runs only while it is open, so repeat this after a reboot.
 
 ```bash
 cp .env.example .env    # then set POSTGRES_PASSWORD and the same password in DATABASE_URL
@@ -36,7 +45,17 @@ npm run db:seed         # add sample data
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. Next.js uses port 3001 when 3000 is taken; the `Local:` line at startup shows the port in use. PostgreSQL listens on `127.0.0.1:5432`.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `failed to connect to the docker API at npipe:////./pipe/docker_engine` | Docker daemon is not running | Start Docker Desktop or Rancher Desktop (see Getting Started) |
+| Page returns 500 with Prisma `ECONNREFUSED` | PostgreSQL container is not running | `npm run db:up` |
+| `required variable POSTGRES_PASSWORD is missing a value` | `.env` is missing or has an empty `POSTGRES_PASSWORD` | Copy `.env.example` to `.env` and set the password |
+| Page returns 500 with Prisma `P1000` (authentication failed) after editing `.env` | The running dev server holds a connection created from the old `DATABASE_URL` | Restart `npm run dev`. The password in `DATABASE_URL` must match `POSTGRES_PASSWORD`; the password is fixed when the Docker volume is first created, so after changing it run `npm run db:down -- -v` and then `db:up`, `db:migrate` and `db:seed` |
+| Home page is empty or a profile is not found | Database has no rows | `npm run db:migrate`, then `npm run db:seed` (safe to repeat) |
 
 ## Scripts
 
