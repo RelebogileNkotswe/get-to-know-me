@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep the committed env template
+!.env.example
+
+# AI agent skills (downloaded/synced per machine via tool CLIs; not source we maintain)
+.claude/skills/
+.cursor/skills/
+.devin/skills/
+.agents/skills/
+skills-lock.json

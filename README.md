@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Get To Know Me
+
+A Next.js web application with a DaisyUI front end, written in TypeScript.
+
+## Technologies
+
+| Area | Technology | Version |
+| --- | --- | --- |
+| Framework | [Next.js](https://nextjs.org) (App Router) | 16.3.7 |
+| UI library | [React](https://react.dev) | 19.2.8 |
+| Language | [TypeScript](https://www.typescriptlang.org) (strict mode) | 5.x |
+| Styling | [Tailwind CSS](https://tailwindcss.com) | 4.x |
+| Component library | [DaisyUI](https://daisyui.com) | 5.x |
+| Date picker | [React Day Picker](https://daypicker.dev) (styled by DaisyUI) | 10.x |
+| Icons | [Google Material Symbols](https://fonts.google.com/icons) (Outlined) | n/a |
+| Linting | [ESLint](https://eslint.org) with `eslint-config-next` | 9.x |
+| Formatting | [Prettier](https://prettier.io) (4-space indent, double quotes) | latest |
+| Runtime | [Node.js](https://nodejs.org) | 22 |
+| Node version management | [Volta](https://volta.sh) (`package.json`) and `.nvmrc` | n/a |
+| Fonts | [`next/font`](https://nextjs.org/docs/app/getting-started/fonts) with [Geist](https://vercel.com/font) | n/a |
 
 ## Getting Started
 
-First, run the development server:
+Install [Volta](https://volta.sh) so the pinned Node version (22) is used automatically inside this repo, or use any tool that reads `.nvmrc`.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Create a production build |
+| `npm run start` | Run the production build |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format `src/` with Prettier |
+| `npm run format:check` | Check formatting without changing files |
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                  # Next.js routing layer (thin: parse request, call a service, return response)
+├── interface/<feature>/  # Service contracts: types and interfaces only
+└── logic/<feature>/      # Service implementations of those contracts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The starter `health` feature shows the pattern: `GET /api/health` calls `logic/health/HealthService.ts`, which implements `interface/health/HealthService.ts`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Conventions
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Code standards: [TypeScriptReactStandards.md](TypeScriptReactStandards.md)
+- Repository structure: [PROJECT-STRUCTURE-SETUP.md](PROJECT-STRUCTURE-SETUP.md)
+- Change history: [CHANGELOG.md](CHANGELOG.md), with user-facing notes in [CHANGELOG.public.md](CHANGELOG.public.md)
+- Deferred issues: [TECH_DEBT.md](TECH_DEBT.md)

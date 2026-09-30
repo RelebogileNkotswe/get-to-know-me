@@ -1,16 +1,19 @@
 {
   "name": "get-to-know-me",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
   },
   "dependencies": {
     "next": "16.3.7",
     "react": "19.2.8",
+    "react-day-picker": "^10.0.1",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
@@ -18,9 +21,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "daisyui": "^5.7.46",
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "volta": {
+    "node": "22.23.3"
   }
 }
