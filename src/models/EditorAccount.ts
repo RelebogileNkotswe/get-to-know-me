@@ -1,5 +1,6 @@
 /** A person known to the tool: they may have a Get To Know Me profile, a linked user account, or both. */
 export interface IEditorAccount {
+    /** Profile id when the person has a profile, otherwise the user account id. */
     id: string;
     name: string;
     email: string;

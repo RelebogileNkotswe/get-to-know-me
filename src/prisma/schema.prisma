@@ -1,0 +1,78 @@
+// Get To Know Me database schema. Migrations live in /migrations.
+// Tables for sessions, email tokens and invites are added in their own phases (see IMPLEMENTATION-PLAN.md).
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  viewer
+  editor
+  admin
+}
+
+enum ProfileStatus {
+  invited
+  awaiting_review
+  published
+}
+
+/// A person who can sign in. Created on first login and linked to a profile by matching email.
+model User {
+  id                   String    @id @default(uuid(7)) @db.Uuid
+  /// Trimmed, lowercased and @singular.co.za only (enforced by a check constraint).
+  email                String    @unique
+  /// Null until the user sets a password after verifying their email.
+  passwordHash         String?   @map("password_hash")
+  role                 UserRole  @default(viewer)
+  failedSignInAttempts Int       @default(0) @map("failed_sign_in_attempts")
+  lockedAt             DateTime? @map("locked_at") @db.Timestamptz(3)
+  emailVerifiedAt      DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  lastSignInAt         DateTime? @map("last_sign_in_at") @db.Timestamptz(3)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("users")
+}
+
+/// A Get To Know Me profile. Empty text fields are stored as empty strings, matching the form.
+model Profile {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  /// Trimmed, lowercased and @singular.co.za only (enforced by a check constraint). Links the profile to a user.
+  companyEmail         String        @unique @map("company_email")
+  firstName            String        @default("") @map("first_name")
+  lastName             String        @default("") @map("last_name")
+  preferredName        String        @default("") @map("preferred_name")
+  position             String        @default("")
+  startDate            DateTime?     @map("start_date") @db.Date
+  linkedIn             String        @default("") @map("linked_in")
+  /// Section "Beyond the office gates".
+  hobbies              String        @default("")
+  /// Section "Beyond the bio".
+  somethingInteresting String        @default("") @map("something_interesting")
+  /// Section "Educational & professional background".
+  background           String        @default("")
+  /// Storage key of the compressed photo; the storage service is chosen in phase 4.
+  photoKey             String?       @map("photo_key")
+  status               ProfileStatus @default(published)
+  publishedAt          DateTime?     @map("published_at") @db.Timestamptz(3)
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([status, startDate])
+  @@map("profiles")
+}
+
+/// Settings that can change without a code change, such as the combined character limit.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}

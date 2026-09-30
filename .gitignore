@@ -49,3 +49,6 @@ next-env.d.ts
 .devin/skills/
 .agents/skills/
 skills-lock.json
+
+# Prisma generated client (rebuilt by `prisma generate` on install)
+/src/prisma/generated/

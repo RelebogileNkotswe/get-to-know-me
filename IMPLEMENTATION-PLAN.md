@@ -61,7 +61,7 @@ Nothing in the repo or spec settles these yet. Each needs an owner's decision be
 
 | Decision | Recommendation (to confirm) | Notes |
 | --- | --- | --- |
-| Database | PostgreSQL with Prisma | `PROJECT-STRUCTURE-SETUP.md` already expects `migrations/` and `src/prisma/` if Prisma is used. |
+| Database | **Decided:** PostgreSQL with Prisma ORM 7.10.0 | Set up in SPEC-1 (v0.4.0). Prisma 8 was still a release candidate, so 7.10.0 is pinned. |
 | Photo storage | Object storage (e.g. Azure Blob or S3), private, served through an authenticated route | Keeps binary data out of the database; photos must never be public URLs. |
 | Email sending | Company SMTP relay or Microsoft Graph | Needed for verification (phase 2), password reset (phase 2) and invites (phase 10). |
 | Hosting | To decide | Affects PDF approach (headless browser needs a suitable host) and file storage. |
@@ -77,6 +77,8 @@ Also in this phase:
 ### Phase 1: Data layer
 
 Replace sample data with a real store behind the existing `interface/` + `logic/` contracts.
+
+Progress (SPEC-1, v0.4.0): Prisma, local Docker PostgreSQL, `users` / `profiles` / `settings` tables, seed data, and database reads for the employee list, editor list and edit page are in place. Still open: the `invites`, `auth_tokens` and `sessions` tables (added in phases 2 and 10), create/update/delete/publish in `ProfileService` (phase 3), reading the character limit from `settings`, and moving the admin users view off sample data (phase 9).
 
 Tables (first pass):
 
