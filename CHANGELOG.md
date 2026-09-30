@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-09-30 - GTKM-02
+
+### Added
+- Local environment setup notes in `README.md` and `CLAUDE.md`: starting Rancher Desktop from the command line (`rdctl`), service ports, and the database startup order.
+- Troubleshooting table in `README.md` covering the Docker daemon, PostgreSQL connection, `.env` password and empty-database errors.
+
 ## [0.4.0] - 2026-09-30 - SPEC-1
 
 ### Added
