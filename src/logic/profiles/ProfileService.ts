@@ -1,7 +1,12 @@
 import "server-only";
-import type { IAccountStatus, IProfileService, SaveProfileResult } from "../../interface/profiles/ProfileService";
+import type {
+    IAccountStatus,
+    IOwnProfileStatus,
+    IProfileService,
+    SaveProfileResult,
+} from "../../interface/profiles/ProfileService";
 import type { IEditorAccount } from "../../models/EditorAccount";
-import type { IEmployee } from "../../models/Employee";
+import { isNewStarter, type IEmployee } from "../../models/Employee";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
 import { db } from "../../prisma/Database";
 import type { Profile } from "../../prisma/generated/client";
@@ -69,6 +74,28 @@ async function findProfile(profileId: string): Promise<Profile | null> {
 }
 
 export const profileService: IProfileService = {
+    async getOwnProfileStatus(email: string): Promise<IOwnProfileStatus> {
+        const [profile, user] = await Promise.all([
+            db.profile.findUnique({ where: { companyEmail: email }, select: { id: true } }),
+            db.user.findUnique({ where: { email }, select: { profileRequestedAt: true } }),
+        ]);
+        return { hasProfile: profile !== null, profileRequested: user?.profileRequestedAt != null };
+    },
+
+    async requestProfile(userId: string): Promise<void> {
+        if (!uuidPattern.test(userId)) {
+            return;
+        }
+        const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+        if (!user) {
+            return;
+        }
+        const profile = await db.profile.findUnique({ where: { companyEmail: user.email }, select: { id: true } });
+        if (profile === null) {
+            await db.user.update({ where: { id: userId }, data: { profileRequestedAt: new Date() } });
+        }
+    },
+
     async getProfile(profileId: string): Promise<IProfileFormValues | null> {
         const profile = await findProfile(profileId);
         return profile ? toFormValues(profile) : null;
@@ -88,7 +115,10 @@ export const profileService: IProfileService = {
     async listEditorAccounts(): Promise<IEditorAccount[]> {
         const [profiles, users] = await Promise.all([
             db.profile.findMany({ orderBy: [{ firstName: "asc" }, { lastName: "asc" }] }),
-            db.user.findMany({ select: { id: true, email: true }, orderBy: { email: "asc" } }),
+            db.user.findMany({
+                select: { id: true, email: true, profileRequestedAt: true },
+                orderBy: { email: "asc" },
+            }),
         ]);
         const profileEmails = new Set<string>(profiles.map((profile: Profile) => profile.companyEmail));
         const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
@@ -101,6 +131,7 @@ export const profileService: IProfileService = {
             startDate: toIsoDate(profile.startDate) || null,
             hasProfile: true,
             hasAccount: userEmails.has(profile.companyEmail),
+            profileRequested: false,
         }));
         for (const user of users) {
             if (!profileEmails.has(user.email)) {
@@ -113,6 +144,7 @@ export const profileService: IProfileService = {
                     startDate: null,
                     hasProfile: false,
                     hasAccount: true,
+                    profileRequested: user.profileRequestedAt !== null,
                 });
             }
         }
@@ -128,13 +160,18 @@ export const profileService: IProfileService = {
             db.user.findMany({ select: { email: true } }),
         ]);
         const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
+        const today = new Date();
         return profiles.map((profile: Profile) => ({
             id: profile.id,
             name: fullName(profile),
             position: profile.position ?? "",
             startDate: toIsoDate(profile.startDate),
+            preferredName: profile.preferredName ?? "",
             hobbies: profile.hobbies ?? "",
+            somethingInteresting: profile.somethingInteresting ?? "",
+            background: profile.background ?? "",
             hasAccount: userEmails.has(profile.companyEmail),
+            isNewStarter: isNewStarter(toIsoDate(profile.startDate), today),
         }));
     },
 

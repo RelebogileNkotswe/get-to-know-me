@@ -12,10 +12,10 @@ const NOT_ALLOWED: SaveProfileResult = {
     errors: { companyEmail: "You are not allowed to change profiles." },
 };
 
-// Server actions can be called directly with a POST request, so every action checks the role itself.
-// TODO: authService.getCurrentRole() is a stub that always returns "admin" until authentication is added.
-function canEditProfiles(): boolean {
-    return hasRoleAtLeast(authService.getCurrentRole(), "editor");
+// Server actions can be called directly with a POST request, so every action checks the signed-in user's role itself.
+async function canEditProfiles(): Promise<boolean> {
+    const user = await authService.getCurrentUser();
+    return user !== null && hasRoleAtLeast(user.role, "editor");
 }
 
 function refreshLists(): void {
@@ -24,7 +24,7 @@ function refreshLists(): void {
 }
 
 export async function createProfileAction(values: IProfileFormValues): Promise<SaveProfileResult> {
-    if (!canEditProfiles()) {
+    if (!(await canEditProfiles())) {
         return NOT_ALLOWED;
     }
     const result = await profileService.createProfile(values);
@@ -35,7 +35,7 @@ export async function createProfileAction(values: IProfileFormValues): Promise<S
 }
 
 export async function updateProfileAction(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult> {
-    if (!canEditProfiles()) {
+    if (!(await canEditProfiles())) {
         return NOT_ALLOWED;
     }
     const result = await profileService.updateProfile(profileId, values);
@@ -47,7 +47,7 @@ export async function updateProfileAction(profileId: string, values: IProfileFor
 
 /** Returns true when the profile was deleted. */
 export async function deleteProfileAction(profileId: string): Promise<boolean> {
-    if (!canEditProfiles()) {
+    if (!(await canEditProfiles())) {
         return false;
     }
     const deleted = await profileService.deleteProfile(profileId);

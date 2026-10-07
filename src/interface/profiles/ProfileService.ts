@@ -11,8 +11,23 @@ export interface IAccountStatus {
     isLocked: boolean;
 }
 
+/** Whether a signed-in user has a profile, and if not, whether they have already asked for one. */
+export interface IOwnProfileStatus {
+    hasProfile: boolean;
+    profileRequested: boolean;
+}
+
 /** Contract for reading Get To Know Me profiles and the accounts linked to them. */
 export interface IProfileService {
+    /** Returns whether a profile with this company email exists, and whether the account has asked for one. */
+    getOwnProfileStatus(email: string): Promise<IOwnProfileStatus>;
+
+    /**
+     * Records that the signed-in user, who has no profile, asks for one. Editors see this in their list of accounts
+     * without a profile. Does nothing for a user who already has a profile.
+     */
+    requestProfile(userId: string): Promise<void>;
+
     /** Returns the saved profile, or null when no profile has this id. */
     getProfile(profileId: string): Promise<IProfileFormValues | null>;
 

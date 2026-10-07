@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { deleteProfileAction } from "../app/editor/profiles/actions";
 import type { IAccountStatus } from "../interface/profiles/ProfileService";
-import { authService } from "../logic/auth/AuthService";
 import type { IProfileFormValues } from "../models/ProfileForm";
 import { hasRoleAtLeast } from "../models/UserRole";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
+import { useCurrentRole } from "./CurrentUserProvider";
 import Icon from "./Icon";
 import ProfileForm from "./ProfileForm";
 
@@ -31,7 +31,7 @@ export default function EditProfileView({
     accountStatus,
     currentPhotoUrl,
 }: IEditProfileViewProps) {
-    const role = authService.getCurrentRole();
+    const role = useCurrentRole();
     const canDeleteProfile: boolean = hasRoleAtLeast(role, "editor");
     const canManageAccount: boolean = hasRoleAtLeast(role, "admin");
 

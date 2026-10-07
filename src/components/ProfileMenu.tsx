@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { authService } from "../logic/auth/AuthService";
+import { signOutAction } from "../app/login/actions";
 import Icon from "./Icon";
 
 /**
@@ -13,11 +13,6 @@ export default function ProfileMenu() {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
-    }
-
-    function logOut(): void {
-        authService.logOut();
-        closeDropdown();
     }
 
     return (
@@ -35,10 +30,12 @@ export default function ProfileMenu() {
                     </Link>
                 </li>
                 <li>
-                    <button type="button" onClick={logOut}>
-                        <Icon name="logout" />
-                        Log out
-                    </button>
+                    <form action={signOutAction}>
+                        <button type="submit" className="w-full text-left">
+                            <Icon name="logout" />
+                            Log out
+                        </button>
+                    </form>
                 </li>
             </ul>
         </div>

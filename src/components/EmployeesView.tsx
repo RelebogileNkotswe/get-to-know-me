@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { authService } from "../logic/auth/AuthService";
-import type { EmployeeView, IEmployee } from "../models/Employee";
+import { matchesEmployeeSearch, type EmployeeView, type IEmployee } from "../models/Employee";
 import { hasRoleAtLeast } from "../models/UserRole";
+import { useCurrentRole } from "./CurrentUserProvider";
 import EmployeeCard from "./EmployeeCard";
+import EmployeeCarousel from "./EmployeeCarousel";
 import EmployeeToolbar from "./EmployeeToolbar";
 import Icon from "./Icon";
 import PersonCell from "./PersonCell";
@@ -22,15 +23,11 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
     const [search, setSearch] = useState<string>("");
     const [startDate, setStartDate] = useState<string>("");
     const [view, setView] = useState<EmployeeView>("card");
-    const showLinkStatus: boolean = hasRoleAtLeast(authService.getCurrentRole(), "editor");
+    const showLinkStatus: boolean = hasRoleAtLeast(useCurrentRole(), "editor");
 
     const searchText: string = search.trim().toLowerCase();
     const visibleEmployees: IEmployee[] = employees.filter((employee: IEmployee) => {
-        const matchesSearch: boolean =
-            searchText === "" ||
-            employee.name.toLowerCase().includes(searchText) ||
-            employee.position.toLowerCase().includes(searchText) ||
-            employee.hobbies.toLowerCase().includes(searchText);
+        const matchesSearch: boolean = matchesEmployeeSearch(employee, searchText);
         const matchesStartDate: boolean = startDate === "" || employee.startDate >= startDate;
         return matchesSearch && matchesStartDate;
     });
@@ -46,6 +43,7 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                 onViewChange={setView}
             />
             <div className="p-6">
+                <EmployeeCarousel newStarters={employees.filter((employee: IEmployee) => employee.isNewStarter)} />
                 {visibleEmployees.length === 0 && <p className="text-base-content/70">No employees match.</p>}
                 {visibleEmployees.length > 0 && view === "list" && (
                     <div className="overflow-x-auto">

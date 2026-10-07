@@ -9,9 +9,9 @@ export const ACCEPTED_PHOTO_TYPES: string[] = ["image/jpeg", "image/png", "image
 
 /**
  * Combined character limit shared by the three text sections, so every profile fits the template.
- * TODO: the spec makes this a setting; 90 is only its example figure.
+ * TODO: the spec makes this a setting; 500 is a temporary figure until the real limit is set.
  */
-export const MAX_COMBINED_TEXT_CHARACTERS = 90;
+export const MAX_COMBINED_TEXT_CHARACTERS = 500;
 
 /** The values an editor enters for a Get To Know Me profile. */
 export interface IProfileFormValues {
