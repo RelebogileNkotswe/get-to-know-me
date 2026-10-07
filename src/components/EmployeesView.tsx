@@ -1,9 +1,13 @@
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
+import { authService } from "../logic/auth/AuthService";
 import type { EmployeeView, IEmployee } from "../models/Employee";
+import { hasRoleAtLeast } from "../models/UserRole";
+import EmployeeCard from "./EmployeeCard";
 import EmployeeToolbar from "./EmployeeToolbar";
+import Icon from "./Icon";
 import PersonCell from "./PersonCell";
 
 interface IEmployeesViewProps {
@@ -17,14 +21,16 @@ interface IEmployeesViewProps {
 export default function EmployeesView({ employees }: IEmployeesViewProps) {
     const [search, setSearch] = useState<string>("");
     const [startDate, setStartDate] = useState<string>("");
-    const [view, setView] = useState<EmployeeView>("list");
+    const [view, setView] = useState<EmployeeView>("card");
+    const showLinkStatus: boolean = hasRoleAtLeast(authService.getCurrentRole(), "editor");
 
     const searchText: string = search.trim().toLowerCase();
     const visibleEmployees: IEmployee[] = employees.filter((employee: IEmployee) => {
         const matchesSearch: boolean =
             searchText === "" ||
             employee.name.toLowerCase().includes(searchText) ||
-            employee.position.toLowerCase().includes(searchText);
+            employee.position.toLowerCase().includes(searchText) ||
+            employee.hobbies.toLowerCase().includes(searchText);
         const matchesStartDate: boolean = startDate === "" || employee.startDate >= startDate;
         return matchesSearch && matchesStartDate;
     });
@@ -49,6 +55,9 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                                     <th>Name</th>
                                     <th>Position</th>
                                     <th>Start date</th>
+                                    <th>
+                                        <span className="sr-only">View profile</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -59,6 +68,15 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                                         </td>
                                         <td>{employee.position}</td>
                                         <td>{employee.startDate}</td>
+                                        <td>
+                                            <Link
+                                                href={`/employees/${employee.id}`}
+                                                className="btn btn-ghost btn-sm btn-square"
+                                                aria-label={`View profile for ${employee.name}`}
+                                            >
+                                                <Icon name="visibility" />
+                                            </Link>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -68,26 +86,7 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                 {visibleEmployees.length > 0 && view === "card" && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {visibleEmployees.map((employee: IEmployee) => (
-                            <div key={employee.id} className="card card-border bg-base-100 shadow-sm">
-                                <figure className="bg-base-200 pt-6">
-                                    <div className="avatar">
-                                        <div className="w-24 rounded-full">
-                                            <Image
-                                                src="/avatar-placeholder.svg"
-                                                alt={employee.name + " profile picture"}
-                                                width={96}
-                                                height={96}
-                                                unoptimized
-                                            />
-                                        </div>
-                                    </div>
-                                </figure>
-                                <div className="card-body">
-                                    <h2 className="card-title">{employee.name}</h2>
-                                    <p>{employee.position}</p>
-                                    <p className="text-base-content/70 text-sm">Started {employee.startDate}</p>
-                                </div>
-                            </div>
+                            <EmployeeCard key={employee.id} employee={employee} showLinkStatus={showLinkStatus} />
                         ))}
                     </div>
                 )}

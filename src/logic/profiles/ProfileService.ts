@@ -1,8 +1,8 @@
 import "server-only";
-import type { IAccountStatus, IProfileService } from "../../interface/profiles/ProfileService";
+import type { IAccountStatus, IProfileService, SaveProfileResult } from "../../interface/profiles/ProfileService";
 import type { IEditorAccount } from "../../models/EditorAccount";
 import type { IEmployee } from "../../models/Employee";
-import type { IProfileFormValues } from "../../models/ProfileForm";
+import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
 import { db } from "../../prisma/Database";
 import type { Profile } from "../../prisma/generated/client";
 
@@ -33,6 +33,33 @@ function toFormValues(profile: Profile): IProfileFormValues {
     };
 }
 
+/** Trimmed text, or null when nothing was entered (the database stores "not entered" as null). */
+function toNullable(value: string): string | null {
+    const trimmed: string = value.trim();
+    return trimmed === "" ? null : trimmed;
+}
+
+// Mirrors `toFormValues`: the email is trimmed and lowercased, empty fields become null.
+function toDatabaseData(values: IProfileFormValues) {
+    return {
+        companyEmail: values.companyEmail.trim().toLowerCase(),
+        firstName: toNullable(values.firstName),
+        lastName: toNullable(values.lastName),
+        preferredName: toNullable(values.preferredName),
+        position: toNullable(values.position),
+        startDate: values.startDate === "" ? null : new Date(`${values.startDate}T00:00:00Z`),
+        linkedIn: toNullable(values.linkedIn),
+        hobbies: toNullable(values.hobbies),
+        somethingInteresting: toNullable(values.somethingInteresting),
+        background: toNullable(values.background),
+    };
+}
+
+/** True when a Prisma error has this code (P2002: unique value already used, P2025: record not found). */
+function hasPrismaCode(error: unknown, code: string): boolean {
+    return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 async function findProfile(profileId: string): Promise<Profile | null> {
     // Ids come from the URL; anything that is not a UUID cannot match and would make Postgres reject the query.
     if (!uuidPattern.test(profileId)) {
@@ -45,6 +72,11 @@ export const profileService: IProfileService = {
     async getProfile(profileId: string): Promise<IProfileFormValues | null> {
         const profile = await findProfile(profileId);
         return profile ? toFormValues(profile) : null;
+    },
+
+    async getPublishedProfile(profileId: string): Promise<IProfileFormValues | null> {
+        const profile = await findProfile(profileId);
+        return profile && profile.status === "published" ? toFormValues(profile) : null;
     },
 
     async getAccountStatus(profileId: string): Promise<IAccountStatus> {
@@ -88,15 +120,70 @@ export const profileService: IProfileService = {
     },
 
     async listPublishedEmployees(): Promise<IEmployee[]> {
-        const profiles = await db.profile.findMany({
-            where: { status: "published" },
-            orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-        });
+        const [profiles, users] = await Promise.all([
+            db.profile.findMany({
+                where: { status: "published" },
+                orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+            }),
+            db.user.findMany({ select: { email: true } }),
+        ]);
+        const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
         return profiles.map((profile: Profile) => ({
             id: profile.id,
             name: fullName(profile),
             position: profile.position ?? "",
             startDate: toIsoDate(profile.startDate),
+            hobbies: profile.hobbies ?? "",
+            hasAccount: userEmails.has(profile.companyEmail),
         }));
+    },
+
+    async createProfile(values: IProfileFormValues): Promise<SaveProfileResult> {
+        // Validated here as well as in the form: the form check can be bypassed.
+        const errors = validateProfileForm(values);
+        if (Object.keys(errors).length > 0) {
+            return { ok: false, errors };
+        }
+        try {
+            const profile = await db.profile.create({
+                data: { ...toDatabaseData(values), status: "published", publishedAt: new Date() },
+            });
+            return { ok: true, profileId: profile.id };
+        } catch (error) {
+            if (hasPrismaCode(error, "P2002")) {
+                return { ok: false, errors: { companyEmail: "That email already has a profile." } };
+            }
+            throw error;
+        }
+    },
+
+    async updateProfile(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult> {
+        const errors = validateProfileForm(values);
+        if (Object.keys(errors).length > 0) {
+            return { ok: false, errors };
+        }
+        if (!uuidPattern.test(profileId)) {
+            return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
+        }
+        try {
+            const profile = await db.profile.update({ where: { id: profileId }, data: toDatabaseData(values) });
+            return { ok: true, profileId: profile.id };
+        } catch (error) {
+            if (hasPrismaCode(error, "P2002")) {
+                return { ok: false, errors: { companyEmail: "That email already has a profile." } };
+            }
+            if (hasPrismaCode(error, "P2025")) {
+                return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
+            }
+            throw error;
+        }
+    },
+
+    async deleteProfile(profileId: string): Promise<boolean> {
+        if (!uuidPattern.test(profileId)) {
+            return false;
+        }
+        const result = await db.profile.deleteMany({ where: { id: profileId } });
+        return result.count > 0;
     },
 };

@@ -11,6 +11,7 @@ export default async function EditProfilePage(props: PageProps<"/editor/profiles
 
     return (
         <EditProfileView
+            profileId={id}
             profile={profile}
             accountStatus={await profileService.getAccountStatus(id)}
             currentPhotoUrl="/avatar-placeholder.svg"

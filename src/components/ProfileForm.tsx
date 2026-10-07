@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { createProfileAction, updateProfileAction } from "../app/editor/profiles/actions";
 import {
     ALLOWED_EMAIL_DOMAIN,
     MAX_COMBINED_TEXT_CHARACTERS,
@@ -14,12 +16,14 @@ import {
 import DatePicker from "./DatePicker";
 import ProfilePhotoField from "./ProfilePhotoField";
 
-type SubmitState = "idle" | "invalid" | "valid";
+type SubmitState = "idle" | "invalid" | "saved";
 
 interface IProfileFormProps {
     /** "create" starts with an empty form; "edit" starts with the saved details in `initialValues`. */
     mode: "create" | "edit";
     initialValues?: IProfileFormValues;
+    /** Id of the profile being edited; required in edit mode. */
+    profileId?: string;
     /** Address of the photo already saved for the person (edit mode). */
     currentPhotoUrl?: string;
 }
@@ -27,7 +31,9 @@ interface IProfileFormProps {
 /**
  * Get To Know Me profile form, used to create a profile or to edit a saved one: basic details plus the three text sections that share one character limit.
  */
-export default function ProfileForm({ mode, initialValues, currentPhotoUrl }: IProfileFormProps) {
+export default function ProfileForm({ mode, initialValues, profileId, currentPhotoUrl }: IProfileFormProps) {
+    const router = useRouter();
+    const [isSaving, startSaving] = useTransition();
     const [values, setValues] = useState<IProfileFormValues>(initialValues ?? emptyProfileForm);
     const [photo, setPhoto] = useState<File | null>(null);
     const [photoError, setPhotoError] = useState<string | null>(null);
@@ -53,8 +59,28 @@ export default function ProfileForm({ mode, initialValues, currentPhotoUrl }: IP
             validationErrors.photo = photoError;
         }
         setErrors(validationErrors);
-        setSubmitState(Object.keys(validationErrors).length === 0 ? "valid" : "invalid");
-        // TODO: save the profile (values and photo) through the API once it exists.
+        if (Object.keys(validationErrors).length > 0) {
+            setSubmitState("invalid");
+            return;
+        }
+
+        // The server validates again and reports a duplicate email.
+        // TODO: the photo is not saved yet; storage for photos is still to be decided.
+        startSaving(async () => {
+            const result =
+                mode === "edit" && profileId
+                    ? await updateProfileAction(profileId, values)
+                    : await createProfileAction(values);
+            if (!result.ok) {
+                setErrors(result.errors);
+                setSubmitState("invalid");
+            } else if (mode === "create") {
+                router.push("/editor");
+            } else {
+                setSubmitState("saved");
+                router.refresh();
+            }
+        });
     }
 
     function renderTextField(
@@ -160,18 +186,18 @@ export default function ProfileForm({ mode, initialValues, currentPhotoUrl }: IP
                     <span>Some fields need attention. Check the messages under the highlighted fields.</span>
                 </div>
             )}
-            {submitState === "valid" && (
-                <div role="alert" className="alert alert-info alert-soft">
+            {submitState === "saved" && (
+                <div role="status" className="alert alert-success alert-soft">
                     <span>
-                        The details are valid{photo ? ` and the photo (${photo.name}) is ready` : ""}. Saving profiles
-                        is not connected yet, so nothing has been stored.
+                        The details were saved.
+                        {photo ? ` The photo (${photo.name}) is not saved yet; photo storage is still to come.` : ""}
                     </span>
                 </div>
             )}
 
             <div className="flex gap-3">
-                <button type="submit" className="btn btn-primary">
-                    {mode === "edit" ? "Save changes" : "Save profile"}
+                <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                    {isSaving ? "Saving..." : mode === "edit" ? "Save changes" : "Save profile"}
                 </button>
                 <Link href="/editor" className="btn btn-ghost">
                     Cancel
