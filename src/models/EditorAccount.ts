@@ -11,6 +11,8 @@ export interface IEditorAccount {
     hasProfile: boolean;
     /** True when the person has a user account linked to their profile email. */
     hasAccount: boolean;
+    /** True when the person has no profile and asked for one. */
+    profileRequested: boolean;
 }
 
 /** Account status choices in the editor filter. */

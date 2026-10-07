@@ -1,5 +1,5 @@
 // Get To Know Me database schema. Migrations live in /migrations.
-// Tables for sessions, email tokens and invites are added in their own phases (see IMPLEMENTATION-PLAN.md).
+// Tables for email tokens and invites are added in their own phases (see IMPLEMENTATION-PLAN.md).
 
 generator client {
   provider = "prisma-client"
@@ -34,10 +34,26 @@ model User {
   lockedAt             DateTime? @map("locked_at") @db.Timestamptz(3)
   emailVerifiedAt      DateTime? @map("email_verified_at") @db.Timestamptz(3)
   lastSignInAt         DateTime? @map("last_sign_in_at") @db.Timestamptz(3)
+  /// Set when a user with no profile asks for one; editors see it in their list of accounts without a profile.
+  profileRequestedAt   DateTime? @map("profile_requested_at") @db.Timestamptz(3)
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessions             Session[]
 
   @@map("users")
+}
+
+/// A signed-in browser. The cookie holds a random token; only its SHA-256 hash is stored, so a database leak cannot be used to sign in.
+model Session {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 /// A Get To Know Me profile. A field that was not entered is null; which fields are required is still to be decided.

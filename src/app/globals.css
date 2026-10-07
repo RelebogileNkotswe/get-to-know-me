@@ -1,2 +1,60 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Brand colours from the Get To Know Me design: dark navy surfaces and a green accent. */
+@theme {
+    --color-brand-navy: #0b1b30;
+    --color-brand-navy-light: #132a47;
+    --color-brand-green: #2fe3a5;
+}
+
+/* New starter carousel: two identical groups of cards side by side, scrolled left by exactly one group, so it loops without a jump. */
+@keyframes new-starters-scroll {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.new-starters-viewport {
+    overflow: hidden;
+}
+
+.new-starters-track {
+    display: flex;
+    width: max-content;
+}
+
+.new-starters-track.is-moving {
+    animation: new-starters-scroll var(--new-starters-duration, 40s) linear infinite;
+}
+
+.new-starters-group {
+    display: flex;
+    gap: 1rem;
+    padding-right: 1rem;
+}
+
+/* Paused while someone points at, presses or tabs into the carousel. */
+.new-starters-track:hover,
+.new-starters-track:active,
+.new-starters-track:focus-within {
+    animation-play-state: paused;
+}
+
+/* Reduced motion: no movement. The row stays still and can be scrolled by hand, and the copy used for looping is hidden. */
+@media (prefers-reduced-motion: reduce) {
+    .new-starters-viewport {
+        overflow-x: auto;
+    }
+
+    .new-starters-track.is-moving {
+        animation: none;
+    }
+
+    .new-starters-group[aria-hidden="true"] {
+        display: none;
+    }
+}

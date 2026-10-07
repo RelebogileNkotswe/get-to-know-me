@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AppShell from "../components/AppShell";
+import CurrentUserProvider from "../components/CurrentUserProvider";
+import { authService } from "../logic/auth/AuthService";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,7 +20,10 @@ export const metadata: Metadata = {
     description: "Get To Know Me web application",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+    // Only shapes the screen (menu entries, role-based buttons): every page and server action checks the session itself.
+    const user = await authService.getCurrentUser();
+
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
             <head>
@@ -30,7 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 />
             </head>
             <body className="min-h-full">
-                <AppShell>{children}</AppShell>
+                <CurrentUserProvider user={user ? { role: user.role, email: user.email } : null}>
+                    {user ? <AppShell>{children}</AppShell> : children}
+                </CurrentUserProvider>
             </body>
         </html>
     );
