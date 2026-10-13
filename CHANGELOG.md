@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-13 - image-upload
+
+### Added
+- Employee photos: choose a JPG, PNG or WebP (up to 5 MB), crop it in a portrait 4:5 frame in the browser (`react-easy-crop`), preview it, and it is saved with the form. New joiners can add a photo on their private invite page, uploaded just before they submit.
+- Server-side photo processing (`sharp`): the file type is read from the image's own bytes, the photo is rotated upright, scaled to 800x1000, converted to JPEG, compressed, and stripped of camera and location data. Files that are not real JPG, PNG or WebP images, empty files and files over 5 MB are refused with a clear message.
+- Photos are stored in a new `profile_photos` table (kept apart from `profiles` so lists never load image bytes) behind `PhotoService`, so object storage can replace it later by changing one file.
+- `/photos/<profileId>` serves photos to signed-in users only: viewers see photos of published profiles, editors and admins also see photos on profiles still in review.
+- Photos show on the employee cards and list, the new starter carousel, the profile page and the edit form, with initials when a person has no photo.
+
+### Changed
+- `serverActions.bodySizeLimit` raised to 6 MB in `next.config.ts` so a photo can be uploaded with a form.
+- The profile form now keeps a profile that was saved but whose photo failed, and saves it again as an edit instead of creating a duplicate.
+
+### Known gaps
+- No "remove photo" button; a photo can only be replaced, and it is deleted with its profile.
+- Photos are stored in the database for now (storage is undecided); a retention period and access review are still needed before real photos are used.
+- `file.ts` in the repository root still fails `next build` type-checking.
+
 ## [0.6.0] - 2026-10-13 - invites-and-review
 
 ### Added

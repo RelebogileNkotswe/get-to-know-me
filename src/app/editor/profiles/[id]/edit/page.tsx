@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import EditProfileView from "../../../../../components/EditProfileView";
 import { requireUser } from "../../../../../logic/auth/RequireUser";
+import { photoService } from "../../../../../logic/photos/PhotoService";
 import { profileService } from "../../../../../logic/profiles/ProfileService";
 
 export default async function EditProfilePage(props: PageProps<"/editor/profiles/[id]/edit">) {
@@ -17,7 +18,7 @@ export default async function EditProfilePage(props: PageProps<"/editor/profiles
             profile={profile}
             status={status}
             accountStatus={await profileService.getAccountStatus(id)}
-            currentPhotoUrl="/avatar-placeholder.svg"
+            currentPhotoUrl={(await photoService.getPhotoUrl(id)) ?? undefined}
         />
     );
 }

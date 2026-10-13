@@ -15,8 +15,10 @@ export interface IEmployee {
     background: string;
     /** True when a user account is linked to this profile by email. */
     hasAccount: boolean;
-    /** True when they started in the last 30 days, so they appear in the new starter carousel. */
+    /** True when they started recently (or start within a few days), so they appear in the new starter carousel. */
     isNewStarter: boolean;
+    /** Address the photo loads from, or null when they have none and their initials are shown instead. */
+    photoUrl: string | null;
 }
 
 /** How many days after starting someone still counts as a new starter. */

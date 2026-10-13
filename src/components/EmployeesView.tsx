@@ -62,7 +62,7 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                                 {visibleEmployees.map((employee: IEmployee) => (
                                     <tr key={employee.id}>
                                         <td>
-                                            <PersonCell name={employee.name} />
+                                            <PersonCell name={employee.name} photoUrl={employee.photoUrl} />
                                         </td>
                                         <td>{employee.position}</td>
                                         <td>{employee.startDate}</td>

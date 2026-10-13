@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { SavePhotoResult } from "../../../interface/photos/PhotoService";
 import type { SaveProfileResult } from "../../../interface/profiles/ProfileService";
 import { authService } from "../../../logic/auth/AuthService";
+import { photoService } from "../../../logic/photos/PhotoService";
 import { profileService } from "../../../logic/profiles/ProfileService";
 import type { IProfileFormValues } from "../../../models/ProfileForm";
 import { hasRoleAtLeast } from "../../../models/UserRole";
@@ -41,6 +43,23 @@ export async function updateProfileAction(profileId: string, values: IProfileFor
     const result = await profileService.updateProfile(profileId, values);
     if (result.ok) {
         refreshLists();
+    }
+    return result;
+}
+
+/** Saves or replaces a profile's photo. The image is checked and compressed on the server. */
+export async function uploadProfilePhotoAction(profileId: string, formData: FormData): Promise<SavePhotoResult> {
+    if (!(await canEditProfiles())) {
+        return { ok: false, error: "You are not allowed to change profiles." };
+    }
+    const file: FormDataEntryValue | null = formData.get("photo");
+    if (!(file instanceof File)) {
+        return { ok: false, error: "Choose a photo first." };
+    }
+    const result = await photoService.savePhoto(profileId, new Uint8Array(await file.arrayBuffer()));
+    if (result.ok) {
+        // The photo shows on cards, the carousel and the profile page, so every page is refreshed.
+        revalidatePath("/", "layout");
     }
     return result;
 }

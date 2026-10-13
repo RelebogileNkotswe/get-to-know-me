@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createProfileAction, updateProfileAction } from "../app/editor/profiles/actions";
-import { submitInviteAction } from "../app/invite/actions";
+import { createProfileAction, updateProfileAction, uploadProfilePhotoAction } from "../app/editor/profiles/actions";
+import { submitInviteAction, uploadInvitePhotoAction } from "../app/invite/actions";
 import {
     ALLOWED_EMAIL_DOMAIN,
     MAX_COMBINED_TEXT_CHARACTERS,
@@ -18,6 +18,13 @@ import DatePicker from "./DatePicker";
 import ProfilePhotoField from "./ProfilePhotoField";
 
 type SubmitState = "idle" | "invalid" | "saved";
+
+/** The photo as form data, which is how a file is sent to a server action. */
+function toPhotoData(photo: File): FormData {
+    const data = new FormData();
+    data.append("photo", photo);
+    return data;
+}
 
 interface IProfileFormProps {
     /**
@@ -54,6 +61,8 @@ export default function ProfileForm({
     const [submitState, setSubmitState] = useState<SubmitState>("idle");
     /** Set when something other than a field is wrong, such as an invite link that no longer works. */
     const [formMessage, setFormMessage] = useState<string | null>(null);
+    /** Set when a new profile was saved but its photo was not, so the next save updates it instead of creating another. */
+    const [createdProfileId, setCreatedProfileId] = useState<string | null>(null);
 
     const charactersUsed: number = countTextCharacters(values);
     const charactersRemaining: number = MAX_COMBINED_TEXT_CHARACTERS - charactersUsed;
@@ -79,10 +88,19 @@ export default function ProfileForm({
             return;
         }
 
-        // The server validates again and reports a duplicate email.
-        // TODO: the photo is not saved yet; storage for photos is still to be decided.
+        // The server validates again and reports a duplicate email, and checks and compresses the photo.
         startSaving(async () => {
             if (mode === "invite" && inviteToken) {
+                // The photo goes first, while the link still accepts changes; submitting closes the link.
+                if (photo) {
+                    const uploaded = await uploadInvitePhotoAction(inviteToken, toPhotoData(photo));
+                    if (!uploaded.ok) {
+                        setFormMessage(uploaded.error);
+                        setSubmitState("invalid");
+                        return;
+                    }
+                    setPhoto(null);
+                }
                 const submitted = await submitInviteAction(inviteToken, values);
                 if (!submitted.ok) {
                     setErrors(submitted.errors);
@@ -94,15 +112,31 @@ export default function ProfileForm({
                 }
                 return;
             }
+
+            // A profile created a moment ago whose photo failed is saved again as an edit, not created twice.
+            const existingId: string | null = profileId ?? createdProfileId;
             const result =
-                mode === "edit" && profileId
-                    ? await updateProfileAction(profileId, values)
-                    : await createProfileAction(values);
+                existingId !== null ? await updateProfileAction(existingId, values) : await createProfileAction(values);
             if (!result.ok) {
                 setErrors(result.errors);
                 setFormMessage(null);
                 setSubmitState("invalid");
-            } else if (mode === "create") {
+                return;
+            }
+
+            if (photo) {
+                const uploaded = await uploadProfilePhotoAction(result.profileId, toPhotoData(photo));
+                if (!uploaded.ok) {
+                    setCreatedProfileId(result.profileId);
+                    setFormMessage(`The details were saved, but the photo was not: ${uploaded.error}`);
+                    setSubmitState("invalid");
+                    return;
+                }
+                setPhoto(null);
+            }
+
+            setFormMessage(null);
+            if (mode === "create" && existingId === null) {
                 router.push("/editor");
             } else {
                 setSubmitState("saved");
@@ -223,10 +257,7 @@ export default function ProfileForm({
             )}
             {submitState === "saved" && (
                 <div role="status" className="alert alert-success alert-soft">
-                    <span>
-                        The details were saved.
-                        {photo ? ` The photo (${photo.name}) is not saved yet; photo storage is still to come.` : ""}
-                    </span>
+                    <span>The details were saved.</span>
                 </div>
             )}
 

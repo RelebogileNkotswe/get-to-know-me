@@ -38,6 +38,9 @@ export interface IInviteService {
     /** Looks up an invite by the token in its link. Never reveals anything about a link that is not valid. */
     getInvite(token: string): Promise<InviteLookup>;
 
+    /** Returns the id of the profile an open invite belongs to, so the new joiner can add a photo to it; null when the link does not work. */
+    findOpenInviteProfileId(token: string): Promise<string | null>;
+
     /**
      * Saves the new joiner's answers and moves the profile to "awaiting review". The email stays as the editor entered it,
      * whatever the browser sends. After this the link no longer works.

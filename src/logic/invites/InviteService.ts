@@ -134,6 +134,11 @@ export const inviteService: IInviteService = {
         return found.state === "open" ? { state: "open", values: toFormValues(found.profile) } : { state: found.state };
     },
 
+    async findOpenInviteProfileId(token: string): Promise<string | null> {
+        const found = await findUsableInvite(token);
+        return found.state === "open" ? found.profile.id : null;
+    },
+
     async submitInvite(token: string, values: IProfileFormValues): Promise<SubmitInviteResult> {
         const found = await findUsableInvite(token);
         if (found.state !== "open") {

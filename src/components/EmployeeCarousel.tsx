@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getInitials, type IEmployee } from "../models/Employee";
+import type { IEmployee } from "../models/Employee";
+import PersonPhoto from "./PersonPhoto";
 
 /** With fewer cards than this the row would not fill the width, so it stays still instead of looping. */
 const MIN_CARDS_TO_MOVE = 4;
@@ -28,12 +29,7 @@ function StarterCard({ employee, isCopy }: IStarterCardProps) {
         >
             <div className="card-body items-center gap-2 p-4 text-center">
                 <div className="relative">
-                    <div
-                        className="bg-primary/15 text-primary flex size-16 items-center justify-center rounded-full text-xl font-semibold"
-                        aria-hidden="true"
-                    >
-                        {getInitials(employee.name)}
-                    </div>
+                    <PersonPhoto name={employee.name} photoUrl={employee.photoUrl} className="size-16 rounded-full" />
                     <span className="badge badge-success badge-sm absolute -right-3 -bottom-1">New</span>
                 </div>
                 <h3 className="font-semibold">{displayName}</h3>
