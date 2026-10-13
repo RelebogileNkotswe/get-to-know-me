@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Breadcrumbs from "./Breadcrumbs";
 import { DRAWER_TOGGLE_ID } from "./DrawerConstants";
@@ -16,10 +17,16 @@ interface IAppShellProps {
  * On large screens the menu can be collapsed; on small screens it slides over the content.
  */
 export default function AppShell({ children }: IAppShellProps) {
+    const pathname: string = usePathname();
     const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
 
     function toggleMenuCollapsed(): void {
         setIsMenuCollapsed(!isMenuCollapsed);
+    }
+
+    // A new joiner's private invite page is only their form, with no menu or top bar, even when someone signed in opens it.
+    if (pathname.startsWith("/invite/")) {
+        return <>{children}</>;
     }
 
     return (

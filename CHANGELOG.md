@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-13 - invites-and-review
+
+### Added
+- Profile invites without email: an editor or admin creates an invite on the new **Invites and review** page (name, company email, optional position and start date) and copies a private link to send by hand. The `invites` table stores only a hash of the link's token; links work for 14 days and stop working after the new joiner submits.
+- Public invite page (`/invite/<token>`): the new joiner fills in their own profile without signing in. It shows only their form, with no menu, and the company email cannot be changed. Submitting moves the profile to "awaiting review".
+- Review and publish: editors and admins review a submitted profile on the edit page, change anything, and click **Publish** so it shows in the employee list. A new link can be made for an unsubmitted invite, or the invite cancelled.
+- In-app notification when a profile is submitted: a count on the **Invites and review** menu link and a banner on the employee list. Create/edit profile shows each profile's status.
+
+### Changed
+- The new starter carousel now also shows people starting within the next 10 days, as well as those who started in the last 30 days (`NEW_STARTER_DAYS_AHEAD` in `src/models/Employee.ts`).
+- The proxy lets `/invite/...` through without a session; every other page still requires sign-in.
+- Shared profile data-mapping helpers moved to `src/logic/profiles/ProfileMapping.ts`.
+
+### Known gaps
+- Photos are not saved, and invite links are copied by hand (no email). There is no "send back with comments", and the employee cannot edit after submitting.
+- No rate limiting on the public invite page.
+
 ## [0.5.0] - 2026-10-07 - ProfileTemplate
 
 ### Added

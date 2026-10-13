@@ -1,3 +1,5 @@
+import type { ProfileStatus } from "./ProfileStatus";
+
 /** A person known to the tool: they may have a Get To Know Me profile, a linked user account, or both. */
 export interface IEditorAccount {
     /** Profile id when the person has a profile, otherwise the user account id. */
@@ -13,6 +15,8 @@ export interface IEditorAccount {
     hasAccount: boolean;
     /** True when the person has no profile and asked for one. */
     profileRequested: boolean;
+    /** Where their profile is (invited, awaiting review or published); null when they have no profile. */
+    profileStatus: ProfileStatus | null;
 }
 
 /** Account status choices in the editor filter. */

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { hasRoleAtLeast } from "../models/UserRole";
+import { profileStatusLabels } from "../models/ProfileStatus";
 import { matchesAccountStatus, type AccountStatusFilter, type IEditorAccount } from "../models/EditorAccount";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
@@ -108,7 +109,13 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                                     <td>{account.startDate ?? "—"}</td>
                                     <td>
                                         {account.hasProfile ? (
-                                            <span className="badge badge-success badge-sm">Has profile</span>
+                                            account.profileStatus === "published" || account.profileStatus === null ? (
+                                                <span className="badge badge-success badge-sm">Has profile</span>
+                                            ) : (
+                                                <span className="badge badge-warning badge-sm">
+                                                    {profileStatusLabels[account.profileStatus]}
+                                                </span>
+                                            )
                                         ) : (
                                             <span className="badge badge-ghost badge-sm">No profile</span>
                                         )}

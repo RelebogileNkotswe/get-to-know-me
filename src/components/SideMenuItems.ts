@@ -11,6 +11,8 @@ export interface ISideMenuLink {
     icon: string;
     minimumRole: UserRole;
     section: SideMenuSection;
+    /** Show how many submitted profiles are waiting for review next to this link. */
+    showsReviewCount?: boolean;
 }
 
 /** Heading shown above each group of links. */
@@ -27,6 +29,14 @@ export const sectionOrder: SideMenuSection[] = ["main", "editor", "admin"];
 export const mainLinks: ISideMenuLink[] = [
     { label: "Employees", href: "/", icon: "groups", minimumRole: "viewer", section: "main" },
     { label: "Create/edit profile", href: "/editor", icon: "person_edit", minimumRole: "editor", section: "editor" },
+    {
+        label: "Invites and review",
+        href: "/editor/invites",
+        icon: "forward_to_inbox",
+        minimumRole: "editor",
+        section: "editor",
+        showsReviewCount: true,
+    },
     { label: "Users and roles", href: "/admin", icon: "admin_panel_settings", minimumRole: "admin", section: "admin" },
 ];
 

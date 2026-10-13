@@ -23,6 +23,7 @@ export default function SideMenu() {
     const pathname: string = usePathname();
     const user = useCurrentUser();
     const currentRole: UserRole = user?.role ?? "viewer";
+    const reviewCount: number = user?.awaitingReviewCount ?? 0;
 
     function closeDrawer(): void {
         const toggle = document.getElementById(DRAWER_TOGGLE_ID) as HTMLInputElement | null;
@@ -57,6 +58,14 @@ export default function SideMenu() {
                 >
                     <Icon name={item.icon} />
                     {item.label}
+                    {item.showsReviewCount && reviewCount > 0 && (
+                        <span
+                            className="bg-brand-green text-brand-navy ml-auto rounded-full px-2 py-0.5 text-xs font-bold"
+                            aria-label={`${reviewCount} waiting for review`}
+                        >
+                            {reviewCount}
+                        </span>
+                    )}
                 </Link>
             </li>
         );
