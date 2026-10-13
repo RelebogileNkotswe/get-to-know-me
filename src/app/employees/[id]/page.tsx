@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import EmployeeProfileView from "../../../components/EmployeeProfileView";
 import { requireUser } from "../../../logic/auth/RequireUser";
+import { photoService } from "../../../logic/photos/PhotoService";
 import { profileService } from "../../../logic/profiles/ProfileService";
 import { hasRoleAtLeast } from "../../../models/UserRole";
 
@@ -12,5 +13,12 @@ export default async function EmployeeProfilePage(props: PageProps<"/employees/[
         notFound();
     }
 
-    return <EmployeeProfileView profileId={id} profile={profile} canEdit={hasRoleAtLeast(user.role, "editor")} />;
+    return (
+        <EmployeeProfileView
+            profileId={id}
+            profile={profile}
+            canEdit={hasRoleAtLeast(user.role, "editor")}
+            photoUrl={await photoService.getPhotoUrl(id)}
+        />
+    );
 }

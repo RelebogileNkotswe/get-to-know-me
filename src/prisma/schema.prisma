@@ -81,9 +81,23 @@ model Profile {
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
   invite               Invite?
+  photo                ProfilePhoto?
 
   @@index([status, startDate])
   @@map("profiles")
+}
+
+/// An employee's photo, already cropped and compressed. Kept in its own table so listing profiles never loads image bytes.
+/// Stored in the database for now because photo storage is still to be decided; see PhotoService to swap it for object storage.
+model ProfilePhoto {
+  profileId   String   @id @map("profile_id") @db.Uuid
+  data        Bytes
+  contentType String   @map("content_type")
+  /// Changes whenever the photo is replaced, so browsers do not keep showing the old one.
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("profile_photos")
 }
 
 /// A private link that lets a new joiner fill in their own profile without signing in. The link holds a random token;

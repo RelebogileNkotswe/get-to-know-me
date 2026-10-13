@@ -8,6 +8,8 @@ interface IEmployeeProfileViewProps {
     profile: IProfileFormValues;
     /** Show the edit and export actions; only editors and admins can use them. */
     canEdit: boolean;
+    /** Address the photo loads from, or null to show their initials. */
+    photoUrl: string | null;
 }
 
 interface IProfileSection {
@@ -32,7 +34,7 @@ function formatStartDate(isoDate: string): string {
  * never depend on who entered the details. Editors and admins also see the edit and export actions.
  * TODO: the company logo, employee photo, A5 fitting and the PDF export are still to come.
  */
-export default function EmployeeProfileView({ profileId, profile, canEdit }: IEmployeeProfileViewProps) {
+export default function EmployeeProfileView({ profileId, profile, canEdit, photoUrl }: IEmployeeProfileViewProps) {
     const name: string = `${profile.firstName} ${profile.lastName}`.trim() || profile.companyEmail;
     const sections: IProfileSection[] = [
         { title: "Beyond the office gates", caption: "Hobbies & Interests", icon: "hiking", text: profile.hobbies },
@@ -116,13 +118,19 @@ export default function EmployeeProfileView({ profileId, profile, canEdit }: IEm
                     <div className="relative shrink-0">
                         <div className="absolute -top-2 -right-2 size-28 rotate-6 rounded-2xl bg-[#2fe3a5]/30" aria-hidden="true" />
                         <div className="absolute -bottom-2 -left-2 size-28 -rotate-6 rounded-2xl bg-[#3b82f6]/40" aria-hidden="true" />
-                        {/* TODO: show the employee photo once photo upload and storage exist. */}
-                        <div
-                            className="relative flex size-28 items-center justify-center rounded-2xl border-4 border-white bg-[#16314f] text-3xl font-semibold text-white/90"
-                            aria-hidden="true"
-                        >
-                            {getInitials(name)}
-                        </div>
+                        {photoUrl ? (
+                            <div className="relative aspect-[4/5] w-28 overflow-hidden rounded-2xl border-4 border-white bg-[#16314f]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={photoUrl} alt={`${name} profile picture`} className="size-full object-cover" />
+                            </div>
+                        ) : (
+                            <div
+                                className="relative flex aspect-[4/5] w-28 items-center justify-center rounded-2xl border-4 border-white bg-[#16314f] text-3xl font-semibold text-white/90"
+                                aria-hidden="true"
+                            >
+                                {getInitials(name)}
+                            </div>
+                        )}
                     </div>
                 </header>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getInitials, type IEmployee } from "../models/Employee";
+import type { IEmployee } from "../models/Employee";
 import Icon from "./Icon";
+import PersonPhoto from "./PersonPhoto";
 
 interface IEmployeeCardProps {
     employee: IEmployee;
@@ -17,12 +18,12 @@ export default function EmployeeCard({ employee, showLinkStatus }: IEmployeeCard
         <div className="card card-border bg-base-100 shadow-sm">
             <div className="card-body gap-3">
                 <div className="flex items-start justify-between gap-2">
-                    <div
-                        className="bg-primary/15 text-primary flex size-14 items-center justify-center rounded-full text-lg font-semibold"
-                        aria-hidden="true"
-                    >
-                        {getInitials(employee.name)}
-                    </div>
+                    <PersonPhoto
+                        name={employee.name}
+                        photoUrl={employee.photoUrl}
+                        className="size-14 rounded-full"
+                        initialsClassName="text-lg"
+                    />
                     {showLinkStatus && (
                         <span className={`badge badge-sm ${employee.hasAccount ? "badge-success" : "badge-warning"}`}>
                             {employee.hasAccount ? "Linked" : "Not yet linked"}

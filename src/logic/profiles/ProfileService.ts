@@ -8,6 +8,7 @@ import type {
 import type { IEditorAccount } from "../../models/EditorAccount";
 import { isNewStarter, type IEmployee } from "../../models/Employee";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
+import { photoUrl } from "../../models/Photo";
 import type { ProfileStatus } from "../../models/ProfileStatus";
 import { db } from "../../prisma/Database";
 import type { Profile } from "../../prisma/generated/client";
@@ -129,13 +130,15 @@ export const profileService: IProfileService = {
         const [profiles, users] = await Promise.all([
             db.profile.findMany({
                 where: { status: "published" },
+                // Only when the photo was last changed is read, never the image itself, so the list stays light.
+                include: { photo: { select: { updatedAt: true } } },
                 orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
             }),
             db.user.findMany({ select: { email: true } }),
         ]);
         const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
         const today = new Date();
-        return profiles.map((profile: Profile) => ({
+        return profiles.map((profile) => ({
             id: profile.id,
             name: fullName(profile),
             position: profile.position ?? "",
@@ -146,6 +149,7 @@ export const profileService: IProfileService = {
             background: profile.background ?? "",
             hasAccount: userEmails.has(profile.companyEmail),
             isNewStarter: isNewStarter(toIsoDate(profile.startDate), today),
+            photoUrl: profile.photo ? photoUrl(profile.id, profile.photo.updatedAt) : null,
         }));
     },
 
