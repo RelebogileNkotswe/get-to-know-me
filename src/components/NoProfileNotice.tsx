@@ -27,20 +27,26 @@ export default function NoProfileNotice({ alreadyRequested }: INoProfileNoticePr
     }
 
     return (
-        <div role="status" className="alert alert-info alert-soft mx-6 mt-6">
-            <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
-                <span>
+        <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-green/20 bg-brand-green/5 px-6 py-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+                <span className="material-symbols-outlined text-[16px] text-brand-green shrink-0">info</span>
+                <p className="text-sm text-white/70">
                     {isRequested
-                        ? "You have asked for a profile. An editor will see your request and can create it for you."
-                        : "You do not have a Get To Know Me profile yet. Ask an editor to create one for you."}
-                    {failed && " The request could not be sent. Try again."}
-                </span>
-                {!isRequested && (
-                    <button type="button" className="btn btn-sm btn-primary" disabled={isPending} onClick={requestProfile}>
-                        {isPending ? "Sending..." : "Ask for a profile"}
-                    </button>
-                )}
+                        ? "Your profile request has been sent — an editor will create it for you."
+                        : "You don't have a profile yet. Ask an editor to create one for you."}
+                    {failed && <span className="text-error ml-1">Could not send — please try again.</span>}
+                </p>
             </div>
+            {!isRequested && (
+                <button
+                    type="button"
+                    className="shrink-0 px-4 py-1.5 rounded-lg bg-brand-green text-brand-navy text-xs font-bold hover:brightness-90 transition-all disabled:opacity-50"
+                    disabled={isPending}
+                    onClick={requestProfile}
+                >
+                    {isPending ? "Sending..." : "Ask for a profile"}
+                </button>
+            )}
         </div>
     );
 }

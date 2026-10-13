@@ -16,19 +16,16 @@ export default function PersonCell({ name, photoUrl }: IPersonCellProps) {
             {photoUrl ? (
                 <PersonPhoto name={name} photoUrl={photoUrl} className="size-8 rounded-full" />
             ) : (
-                <div className="avatar">
-                    <div className="w-8 rounded-full">
-                        <Image
-                            src="/avatar-placeholder.svg"
-                            alt={`${name} profile picture`}
-                            width={32}
-                            height={32}
-                            unoptimized
-                        />
-                    </div>
-                </div>
+                <Image
+                    src="/avatar-placeholder.svg"
+                    alt={`${name} profile picture`}
+                    width={32}
+                    height={32}
+                    className="size-8 rounded-full"
+                    unoptimized
+                />
             )}
-            <span>{name}</span>
+            <span className="text-sm font-medium text-white">{name}</span>
         </div>
     );
 }

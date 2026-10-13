@@ -6,6 +6,37 @@
     --color-brand-navy: #0b1b30;
     --color-brand-navy-light: #132a47;
     --color-brand-green: #2fe3a5;
+
+    /* Surface scale — dark navy palette */
+    --color-surface: #0b1b30;
+    --color-surface-container-low: #0f2342;
+    --color-surface-container: #132a47;
+    --color-surface-container-high: #1a3558;
+    --color-surface-container-highest: #1e3d65;
+
+    /* Primary — brand green */
+    --color-primary: #2fe3a5;
+    --color-primary-container: #1a7a5a;
+    --color-on-primary: #0b1b30;
+    --color-on-primary-container: #cffae9;
+
+    /* Content */
+    --color-on-surface: #ffffff;
+    --color-on-surface-variant: #a0b4c8;
+
+    /* Borders */
+    --color-outline: #3c5975;
+    --color-outline-variant: #253c52;
+
+    /* Secondary */
+    --color-secondary-container: #1a3558;
+
+    /* Error */
+    --color-error: #f87171;
+    --color-error-container: #7f1d1d;
+
+    /* Headline font alias */
+    --font-headline: var(--font-geist-sans);
 }
 
 /* New starter carousel: two identical groups of cards side by side, scrolled left by exactly one group, so it loops without a jump. */
