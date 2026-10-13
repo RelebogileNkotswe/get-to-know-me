@@ -7,9 +7,5 @@ export default async function LoginPage() {
         redirect("/");
     }
 
-    return (
-        <main className="flex min-h-screen items-center justify-center p-6">
-            <LoginForm />
-        </main>
-    );
+    return <LoginForm />;
 }

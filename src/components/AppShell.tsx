@@ -33,7 +33,7 @@ export default function AppShell({ children }: IAppShellProps) {
         <div className={`drawer min-h-screen ${isMenuCollapsed ? "" : "lg:drawer-open"}`}>
             <input id={DRAWER_TOGGLE_ID} type="checkbox" className="drawer-toggle" />
             <div className="drawer-content flex min-h-screen flex-col">
-                <div className="navbar bg-base-100 px-4 shadow-sm">
+                <div className="navbar bg-brand-navy border-b border-white/10 px-4">
                     <label
                         htmlFor={DRAWER_TOGGLE_ID}
                         className="btn btn-square btn-ghost lg:hidden"
@@ -58,7 +58,7 @@ export default function AppShell({ children }: IAppShellProps) {
                         <ProfileMenu />
                     </div>
                 </div>
-                <div className="flex flex-1 flex-col">{children}</div>
+                <div className="flex flex-1 flex-col bg-brand-navy">{children}</div>
             </div>
             <div className="drawer-side">
                 <label htmlFor={DRAWER_TOGGLE_ID} className="drawer-overlay" aria-label="Close menu"></label>

@@ -30,8 +30,8 @@ export default function EmployeeToolbar({
     }
 
     return (
-        <section className="bg-base-100 border-base-300 flex flex-wrap items-center gap-3 border-b px-6 py-3">
-            <label className="input w-full sm:w-80">
+        <section className="border-b border-white/8 flex flex-wrap items-center gap-3 px-6 py-4 bg-brand-navy">
+            <label className="flex items-center gap-2 bg-brand-navy-light border border-white/10 rounded-full px-4 py-2 w-full sm:w-96 focus-within:border-brand-green/40 transition-colors">
                 <Icon name="search" />
                 <input
                     type="search"
@@ -39,17 +39,18 @@ export default function EmployeeToolbar({
                     aria-label="Search by name, position or profile text"
                     value={search}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => onSearchChange(event.target.value)}
+                    className="bg-transparent text-sm text-white placeholder:text-white/30 flex-1 outline-none"
                 />
             </label>
             <DatePicker label="Started on or after" value={startDate} onChange={onStartDateChange} />
-            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={clearFilters}>
+            <button type="button" className="flex items-center gap-1 text-sm text-outline hover:text-white transition-colors disabled:opacity-40" disabled={!hasFilters} onClick={clearFilters}>
                 <Icon name="filter_alt_off" />
                 Clear
             </button>
-            <div className="join ml-auto" role="group" aria-label="View">
+            <div className="ml-auto flex border border-white/10 rounded-lg overflow-hidden" role="group" aria-label="View">
                 <button
                     type="button"
-                    className={`join-item btn ${view === "list" ? "btn-active" : ""}`}
+                    className={`p-2 transition-colors ${view === "list" ? "bg-brand-green text-brand-navy" : "bg-brand-navy text-outline hover:text-white"}`}
                     aria-label="List view"
                     aria-pressed={view === "list"}
                     onClick={() => onViewChange("list")}
@@ -58,7 +59,7 @@ export default function EmployeeToolbar({
                 </button>
                 <button
                     type="button"
-                    className={`join-item btn ${view === "card" ? "btn-active" : ""}`}
+                    className={`p-2 transition-colors ${view === "card" ? "bg-brand-green text-brand-navy" : "bg-brand-navy text-outline hover:text-white"}`}
                     aria-label="Card view"
                     aria-pressed={view === "card"}
                     onClick={() => onViewChange("card")}
