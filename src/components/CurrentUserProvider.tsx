@@ -7,6 +7,8 @@ import type { UserRole } from "../models/UserRole";
 interface ICurrentUserInfo {
     role: UserRole;
     email: string;
+    /** Submitted profiles waiting for review; only counted for editors and admins, otherwise 0. */
+    awaitingReviewCount: number;
 }
 
 const CurrentUserContext = createContext<ICurrentUserInfo | null>(null);

@@ -14,6 +14,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-    // Everything except the login page, the health check and Next.js static files.
-    matcher: ["/((?!login|api/health|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)"],
+    // Everything except the login page, the private invite links (they open without signing in), the health check and
+    // Next.js static files.
+    matcher: ["/((?!login|invite/|api/health|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)"],
 };

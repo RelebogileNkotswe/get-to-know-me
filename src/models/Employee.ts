@@ -22,9 +22,12 @@ export interface IEmployee {
 /** How many days after starting someone still counts as a new starter. */
 export const NEW_STARTER_DAYS = 30;
 
+/** How many days before their start date someone already shows as a new starter, so colleagues can welcome them in advance. */
+export const NEW_STARTER_DAYS_AHEAD = 10;
+
 /**
- * True when the start date is today or up to 30 days ago. Someone whose start date is still in the future is not shown yet.
- * Dates are ISO strings such as 2026-09-14, so they compare correctly as text.
+ * True when the start date is from 30 days ago up to 10 days from now. Dates are ISO strings such as 2026-09-14, so they
+ * compare correctly as text.
  */
 export function isNewStarter(startDate: string, today: Date): boolean {
     if (startDate === "") {
@@ -33,7 +36,9 @@ export function isNewStarter(startDate: string, today: Date): boolean {
     const todayIso: string = today.toISOString().slice(0, 10);
     const earliest: Date = new Date(`${todayIso}T00:00:00Z`);
     earliest.setUTCDate(earliest.getUTCDate() - NEW_STARTER_DAYS);
-    return startDate <= todayIso && startDate >= earliest.toISOString().slice(0, 10);
+    const latest: Date = new Date(`${todayIso}T00:00:00Z`);
+    latest.setUTCDate(latest.getUTCDate() + NEW_STARTER_DAYS_AHEAD);
+    return startDate >= earliest.toISOString().slice(0, 10) && startDate <= latest.toISOString().slice(0, 10);
 }
 
 /** True when the search text appears in the name, position or any of the three profile text sections. */

@@ -1,6 +1,7 @@
 import type { IEditorAccount } from "../../models/EditorAccount";
 import type { IEmployee } from "../../models/Employee";
 import type { IProfileFormValues, ProfileFormErrors } from "../../models/ProfileForm";
+import type { ProfileStatus } from "../../models/ProfileStatus";
 
 /** Outcome of creating or updating a profile: the saved profile's id, or an error message for each invalid field. */
 export type SaveProfileResult = { ok: true; profileId: string } | { ok: false; errors: ProfileFormErrors };
@@ -51,6 +52,15 @@ export interface IProfileService {
 
     /** Validates and saves changes to a profile. Fails with the same errors as `createProfile`, or an error on the email when the profile no longer exists. */
     updateProfile(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult>;
+
+    /** Returns where the profile is in its life (invited, awaiting review or published), or null when it does not exist. */
+    getProfileStatus(profileId: string): Promise<ProfileStatus | null>;
+
+    /** Publishes a profile the employee has submitted, so it shows in the employee list. Returns false when it was not awaiting review. */
+    publishProfile(profileId: string): Promise<boolean>;
+
+    /** How many submitted profiles are waiting for an editor or admin to review them. */
+    countAwaitingReview(): Promise<number>;
 
     /** Deletes the profile. Returns false when no profile has this id. The linked user account is kept. */
     deleteProfile(profileId: string): Promise<boolean>;

@@ -21,6 +21,9 @@ export function getBreadcrumbs(pathname: string): IBreadcrumb[] {
     if (pathname === "/editor") {
         return [home, { label: "Create/edit profile" }];
     }
+    if (pathname === "/editor/invites") {
+        return [home, editor, { label: "Invites and review" }];
+    }
     if (pathname === "/editor/profiles/new") {
         return [home, editor, { label: "Create profile" }];
     }

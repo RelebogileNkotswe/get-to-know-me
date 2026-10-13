@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import AppShell from "../components/AppShell";
 import CurrentUserProvider from "../components/CurrentUserProvider";
 import { authService } from "../logic/auth/AuthService";
+import { profileService } from "../logic/profiles/ProfileService";
+import { hasRoleAtLeast } from "../models/UserRole";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,6 +25,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
     // Only shapes the screen (menu entries, role-based buttons): every page and server action checks the session itself.
     const user = await authService.getCurrentUser();
+    // The menu shows how many submitted profiles are waiting, so an editor or admin notices a new submission.
+    const awaitingReviewCount: number =
+        user && hasRoleAtLeast(user.role, "editor") ? await profileService.countAwaitingReview() : 0;
 
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
@@ -35,7 +40,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 />
             </head>
             <body className="min-h-full">
-                <CurrentUserProvider user={user ? { role: user.role, email: user.email } : null}>
+                <CurrentUserProvider
+                    user={user ? { role: user.role, email: user.email, awaitingReviewCount } : null}
+                >
                     {user ? <AppShell>{children}</AppShell> : children}
                 </CurrentUserProvider>
             </body>

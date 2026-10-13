@@ -45,6 +45,19 @@ export async function updateProfileAction(profileId: string, values: IProfileFor
     return result;
 }
 
+/** Publishes a profile the employee submitted, so it shows in the employee list. Returns true when it was published. */
+export async function publishProfileAction(profileId: string): Promise<boolean> {
+    if (!(await canEditProfiles())) {
+        return false;
+    }
+    const published = await profileService.publishProfile(profileId);
+    if (published) {
+        refreshLists();
+        revalidatePath("/editor/invites");
+    }
+    return published;
+}
+
 /** Returns true when the profile was deleted. */
 export async function deleteProfileAction(profileId: string): Promise<boolean> {
     if (!(await canEditProfiles())) {

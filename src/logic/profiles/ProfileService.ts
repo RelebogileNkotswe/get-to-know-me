@@ -8,10 +8,10 @@ import type {
 import type { IEditorAccount } from "../../models/EditorAccount";
 import { isNewStarter, type IEmployee } from "../../models/Employee";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
+import type { ProfileStatus } from "../../models/ProfileStatus";
 import { db } from "../../prisma/Database";
 import type { Profile } from "../../prisma/generated/client";
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { hasPrismaCode, toDatabaseData, uuidPattern } from "./ProfileMapping";
 
 /** ISO date (e.g. 2026-09-14) for a date-only column, or an empty string. */
 function toIsoDate(value: Date | null): string {
@@ -38,35 +38,7 @@ function toFormValues(profile: Profile): IProfileFormValues {
     };
 }
 
-/** Trimmed text, or null when nothing was entered (the database stores "not entered" as null). */
-function toNullable(value: string): string | null {
-    const trimmed: string = value.trim();
-    return trimmed === "" ? null : trimmed;
-}
-
-// Mirrors `toFormValues`: the email is trimmed and lowercased, empty fields become null.
-function toDatabaseData(values: IProfileFormValues) {
-    return {
-        companyEmail: values.companyEmail.trim().toLowerCase(),
-        firstName: toNullable(values.firstName),
-        lastName: toNullable(values.lastName),
-        preferredName: toNullable(values.preferredName),
-        position: toNullable(values.position),
-        startDate: values.startDate === "" ? null : new Date(`${values.startDate}T00:00:00Z`),
-        linkedIn: toNullable(values.linkedIn),
-        hobbies: toNullable(values.hobbies),
-        somethingInteresting: toNullable(values.somethingInteresting),
-        background: toNullable(values.background),
-    };
-}
-
-/** True when a Prisma error has this code (P2002: unique value already used, P2025: record not found). */
-function hasPrismaCode(error: unknown, code: string): boolean {
-    return typeof error === "object" && error !== null && "code" in error && error.code === code;
-}
-
 async function findProfile(profileId: string): Promise<Profile | null> {
-    // Ids come from the URL; anything that is not a UUID cannot match and would make Postgres reject the query.
     if (!uuidPattern.test(profileId)) {
         return null;
     }
@@ -132,6 +104,7 @@ export const profileService: IProfileService = {
             hasProfile: true,
             hasAccount: userEmails.has(profile.companyEmail),
             profileRequested: false,
+            profileStatus: profile.status,
         }));
         for (const user of users) {
             if (!profileEmails.has(user.email)) {
@@ -145,6 +118,7 @@ export const profileService: IProfileService = {
                     hasProfile: false,
                     hasAccount: true,
                     profileRequested: user.profileRequestedAt !== null,
+                    profileStatus: null,
                 });
             }
         }
@@ -214,6 +188,27 @@ export const profileService: IProfileService = {
             }
             throw error;
         }
+    },
+
+    async getProfileStatus(profileId: string): Promise<ProfileStatus | null> {
+        const profile = await findProfile(profileId);
+        return profile ? profile.status : null;
+    },
+
+    async publishProfile(profileId: string): Promise<boolean> {
+        if (!uuidPattern.test(profileId)) {
+            return false;
+        }
+        // Only a profile the employee has submitted can be published; an invited one has nothing to review yet.
+        const result = await db.profile.updateMany({
+            where: { id: profileId, status: "awaiting_review" },
+            data: { status: "published", publishedAt: new Date() },
+        });
+        return result.count > 0;
+    },
+
+    async countAwaitingReview(): Promise<number> {
+        return db.profile.count({ where: { status: "awaiting_review" } });
     },
 
     async deleteProfile(profileId: string): Promise<boolean> {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createProfileAction, updateProfileAction } from "../app/editor/profiles/actions";
+import { submitInviteAction } from "../app/invite/actions";
 import {
     ALLOWED_EMAIL_DOMAIN,
     MAX_COMBINED_TEXT_CHARACTERS,
@@ -19,11 +20,17 @@ import ProfilePhotoField from "./ProfilePhotoField";
 type SubmitState = "idle" | "invalid" | "saved";
 
 interface IProfileFormProps {
-    /** "create" starts with an empty form; "edit" starts with the saved details in `initialValues`. */
-    mode: "create" | "edit";
+    /**
+     * "create" starts with an empty form; "edit" starts with the saved details in `initialValues`; "invite" is the form a new
+     * joiner fills in from their private link: it starts with what the editor entered, the email cannot be changed, and submitting
+     * sends the profile for review.
+     */
+    mode: "create" | "edit" | "invite";
     initialValues?: IProfileFormValues;
     /** Id of the profile being edited; required in edit mode. */
     profileId?: string;
+    /** The private token from the invite link; required in invite mode. */
+    inviteToken?: string;
     /** Address of the photo already saved for the person (edit mode). */
     currentPhotoUrl?: string;
 }
@@ -31,7 +38,13 @@ interface IProfileFormProps {
 /**
  * Get To Know Me profile form, used to create a profile or to edit a saved one: basic details plus the three text sections that share one character limit.
  */
-export default function ProfileForm({ mode, initialValues, profileId, currentPhotoUrl }: IProfileFormProps) {
+export default function ProfileForm({
+    mode,
+    initialValues,
+    profileId,
+    inviteToken,
+    currentPhotoUrl,
+}: IProfileFormProps) {
     const router = useRouter();
     const [isSaving, startSaving] = useTransition();
     const [values, setValues] = useState<IProfileFormValues>(initialValues ?? emptyProfileForm);
@@ -39,6 +52,8 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
     const [photoError, setPhotoError] = useState<string | null>(null);
     const [errors, setErrors] = useState<ProfileFormErrors>({});
     const [submitState, setSubmitState] = useState<SubmitState>("idle");
+    /** Set when something other than a field is wrong, such as an invite link that no longer works. */
+    const [formMessage, setFormMessage] = useState<string | null>(null);
 
     const charactersUsed: number = countTextCharacters(values);
     const charactersRemaining: number = MAX_COMBINED_TEXT_CHARACTERS - charactersUsed;
@@ -67,12 +82,25 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
         // The server validates again and reports a duplicate email.
         // TODO: the photo is not saved yet; storage for photos is still to be decided.
         startSaving(async () => {
+            if (mode === "invite" && inviteToken) {
+                const submitted = await submitInviteAction(inviteToken, values);
+                if (!submitted.ok) {
+                    setErrors(submitted.errors);
+                    setFormMessage(submitted.linkProblem);
+                    setSubmitState("invalid");
+                } else {
+                    // The page now shows the thank-you message, because the link no longer accepts changes.
+                    router.refresh();
+                }
+                return;
+            }
             const result =
                 mode === "edit" && profileId
                     ? await updateProfileAction(profileId, values)
                     : await createProfileAction(values);
             if (!result.ok) {
                 setErrors(result.errors);
+                setFormMessage(null);
                 setSubmitState("invalid");
             } else if (mode === "create") {
                 router.push("/editor");
@@ -86,7 +114,7 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
     function renderTextField(
         name: keyof IProfileFormValues,
         legend: string,
-        options: { type?: string; placeholder?: string; hint?: string } = {},
+        options: { type?: string; placeholder?: string; hint?: string; readOnly?: boolean } = {},
     ) {
         const error: string | undefined = errors[name];
         return (
@@ -97,6 +125,7 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
                     className={`input w-full ${error ? "input-error" : ""}`}
                     placeholder={options.placeholder}
                     aria-label={legend}
+                    readOnly={options.readOnly}
                     value={values[name]}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setValue(name, event.target.value)}
                 />
@@ -152,7 +181,11 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
                     {renderTextField("companyEmail", "Company email *", {
                         type: "email",
                         placeholder: `name${ALLOWED_EMAIL_DOMAIN}`,
-                        hint: `Required. Must end in ${ALLOWED_EMAIL_DOMAIN}. Links the profile to the person's account.`,
+                        readOnly: mode === "invite",
+                        hint:
+                            mode === "invite"
+                                ? "Set up for you by Singular Systems. It links this profile to your account."
+                                : `Required. Must end in ${ALLOWED_EMAIL_DOMAIN}. Links the profile to the person's account.`,
                     })}
                     {renderTextField("linkedIn", "LinkedIn (optional)", {
                         type: "url",
@@ -183,7 +216,9 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
 
             {submitState === "invalid" && (
                 <div role="alert" className="alert alert-error alert-soft">
-                    <span>Some fields need attention. Check the messages under the highlighted fields.</span>
+                    <span>
+                        {formMessage ?? "Some fields need attention. Check the messages under the highlighted fields."}
+                    </span>
                 </div>
             )}
             {submitState === "saved" && (
@@ -197,11 +232,19 @@ export default function ProfileForm({ mode, initialValues, profileId, currentPho
 
             <div className="flex gap-3">
                 <button type="submit" className="btn btn-primary" disabled={isSaving}>
-                    {isSaving ? "Saving..." : mode === "edit" ? "Save changes" : "Save profile"}
+                    {isSaving
+                        ? "Saving..."
+                        : mode === "invite"
+                          ? "Submit my profile"
+                          : mode === "edit"
+                            ? "Save changes"
+                            : "Save profile"}
                 </button>
-                <Link href="/editor" className="btn btn-ghost">
-                    Cancel
-                </Link>
+                {mode !== "invite" && (
+                    <Link href="/editor" className="btn btn-ghost">
+                        Cancel
+                    </Link>
+                )}
             </div>
         </form>
     );
