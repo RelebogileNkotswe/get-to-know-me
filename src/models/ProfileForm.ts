@@ -9,9 +9,9 @@ export const ACCEPTED_PHOTO_TYPES: string[] = ["image/jpeg", "image/png", "image
 
 /**
  * Combined character limit shared by the three text sections, so every profile fits the template.
- * TODO: the spec makes this a setting; 90 is only its example figure.
+ * TODO: the spec makes this a setting; 500 is a temporary figure until the real limit is set.
  */
-export const MAX_COMBINED_TEXT_CHARACTERS = 90;
+export const MAX_COMBINED_TEXT_CHARACTERS = 500;
 
 /** The values an editor enters for a Get To Know Me profile. */
 export interface IProfileFormValues {
@@ -77,9 +77,38 @@ function isLinkedInAddress(value: string): boolean {
     }
 }
 
+/** Longest value accepted for the short text fields (names, position, email, LinkedIn address). */
+export const MAX_SHORT_FIELD_LENGTH = 200;
+
+const SHORT_TEXT_FIELDS: { name: "firstName" | "lastName" | "preferredName" | "position"; label: string }[] = [
+    { name: "firstName", label: "First name" },
+    { name: "lastName", label: "Last name" },
+    { name: "preferredName", label: "Preferred name" },
+    { name: "position", label: "Position" },
+];
+
+/** True when the value is a real calendar date written as YYYY-MM-DD. */
+function isIsoDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+    }
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 /** Checks the form values against the profile rules and returns an error message for each invalid field. */
 export function validateProfileForm(values: IProfileFormValues): ProfileFormErrors {
     const errors: ProfileFormErrors = {};
+
+    for (const field of SHORT_TEXT_FIELDS) {
+        if (values[field.name].trim().length > MAX_SHORT_FIELD_LENGTH) {
+            errors[field.name] = `${field.label} can be at most ${MAX_SHORT_FIELD_LENGTH} characters.`;
+        }
+    }
+
+    if (values.startDate !== "" && !isIsoDate(values.startDate)) {
+        errors.startDate = "Enter a valid start date.";
+    }
 
     const email: string = values.companyEmail.trim().toLowerCase();
     if (email === "") {
@@ -88,11 +117,15 @@ export function validateProfileForm(values: IProfileFormValues): ProfileFormErro
         errors.companyEmail = "Enter a valid email address.";
     } else if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
         errors.companyEmail = `Use a company email ending in ${ALLOWED_EMAIL_DOMAIN}.`;
+    } else if (email.length > MAX_SHORT_FIELD_LENGTH) {
+        errors.companyEmail = `Company email can be at most ${MAX_SHORT_FIELD_LENGTH} characters.`;
     }
 
     const linkedIn: string = values.linkedIn.trim();
     if (linkedIn !== "" && !isLinkedInAddress(linkedIn)) {
         errors.linkedIn = "Enter a LinkedIn address, for example https://www.linkedin.com/in/name.";
+    } else if (linkedIn.length > MAX_SHORT_FIELD_LENGTH) {
+        errors.linkedIn = `LinkedIn address can be at most ${MAX_SHORT_FIELD_LENGTH} characters.`;
     }
 
     if (countTextCharacters(values) > MAX_COMBINED_TEXT_CHARACTERS) {

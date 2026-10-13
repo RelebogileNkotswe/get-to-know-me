@@ -1,92 +1,67 @@
 "use client";
 
-import { useState } from "react";
-import { authService } from "../logic/auth/AuthService";
-import { hasRoleAtLeast } from "../models/UserRole";
+import { useState, useTransition } from "react";
+import { changeRoleAction, unlockUserAction } from "../app/admin/actions";
+import type { UserActionResult } from "../interface/users/UserService";
 import { roleLabels, type IUserAccount, type LockStatusFilter, type RoleFilter } from "../models/UserAccount";
+import type { UserRole } from "../models/UserRole";
 import ActionNotice from "./ActionNotice";
 import AdminToolbar from "./AdminToolbar";
 import ConfirmDialog from "./ConfirmDialog";
 import Icon from "./Icon";
 import PersonCell from "./PersonCell";
 
-// TODO: replace with users loaded from the API once it exists.
-const sampleUsers: IUserAccount[] = [
-    {
-        id: "1",
-        name: "Sample User 1",
-        email: "user1@example.com",
-        role: "admin",
-        isLocked: false,
-        lastSignIn: "2026-09-28",
-    },
-    {
-        id: "2",
-        name: "Sample User 2",
-        email: "user2@example.com",
-        role: "editor",
-        isLocked: false,
-        lastSignIn: "2026-09-20",
-    },
-    {
-        id: "3",
-        name: "Sample User 3",
-        email: "user3@example.com",
-        role: "viewer",
-        isLocked: true,
-        lastSignIn: "2026-08-15",
-    },
-    {
-        id: "4",
-        name: "Sample User 4",
-        email: "user4@example.com",
-        role: "viewer",
-        isLocked: false,
-        lastSignIn: null,
-    },
-];
-
-type UserAction = "block" | "delete";
-
-interface IPendingUserAction {
-    user: IUserAccount;
-    action: UserAction;
+interface IAdminUsersViewProps {
+    /** Every user account, loaded on the server. */
+    users: IUserAccount[];
+    /** The signed-in admin, whose own role cannot be changed here. */
+    currentUserId: string;
 }
 
+interface IPendingRoleChange {
+    user: IUserAccount;
+    role: UserRole;
+}
+
+const ROLES: UserRole[] = ["viewer", "editor", "admin"];
+
 /**
- * Admin page body: the toolbar plus a table of users with their role, lock status and last sign-in.
+ * Admin page body: the toolbar plus a table of users where an admin can change roles and unlock locked accounts.
+ * Only admins can open this page, and every change is checked again on the server.
  */
-export default function AdminUsersView() {
+export default function AdminUsersView({ users, currentUserId }: IAdminUsersViewProps) {
     const [search, setSearch] = useState<string>("");
     const [role, setRole] = useState<RoleFilter>("all");
     const [lockStatus, setLockStatus] = useState<LockStatusFilter>("all");
     const [signedInSince, setSignedInSince] = useState<string>("");
-    const [users, setUsers] = useState<IUserAccount[]>(sampleUsers);
-    const [pending, setPending] = useState<IPendingUserAction | null>(null);
+    const [pending, setPending] = useState<IPendingRoleChange | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isWorking, startWorking] = useTransition();
 
-    const canManageUsers: boolean = hasRoleAtLeast(authService.getCurrentRole(), "admin");
-
-    // TODO: the three actions below only change the sample data on this page until the API exists.
-    function setLocked(user: IUserAccount, isLocked: boolean): void {
-        setUsers((current: IUserAccount[]) =>
-            current.map((item: IUserAccount) => (item.id === user.id ? { ...item, isLocked } : item)),
-        );
-        setNotice(isLocked ? `Blocked ${user.name}.` : `Unlocked ${user.name}.`);
+    function runAction(action: () => Promise<UserActionResult>, successMessage: string): void {
+        setNotice(null);
+        setError(null);
+        startWorking(async () => {
+            const result: UserActionResult = await action();
+            if (result.ok) {
+                setNotice(successMessage);
+            } else {
+                setError(result.error);
+            }
+        });
     }
 
-    function confirmPendingAction(): void {
+    function confirmRoleChange(): void {
         if (!pending) {
             return;
         }
-        if (pending.action === "block") {
-            setLocked(pending.user, true);
-        } else {
-            const target: IUserAccount = pending.user;
-            setUsers((current: IUserAccount[]) => current.filter((item: IUserAccount) => item.id !== target.id));
-            setNotice(`Deleted the account for ${target.name}.`);
-        }
+        const { user, role: newRole } = pending;
         setPending(null);
+        runAction(
+            () => changeRoleAction(user.id, newRole),
+            `${user.name} is now ${roleLabels[newRole].toLowerCase()}. It applies the next time they open a page.`,
+        );
     }
 
     const searchText: string = search.trim().toLowerCase();
@@ -116,9 +91,16 @@ export default function AdminUsersView() {
                 onSignedInSinceChange={setSignedInSince}
             />
             <div className="p-6">
-                <h1 className="text-2xl font-semibold">Admin</h1>
-                <p className="text-base-content/70 mt-2 mb-6">Users, their roles and locked accounts.</p>
+                <h1 className="text-2xl font-semibold">User and role management</h1>
+                <p className="text-base-content/70 mt-2 mb-6">
+                    Change roles and unlock accounts. Everyone starts as a viewer.
+                </p>
                 {notice && <ActionNotice message={notice} onDismiss={() => setNotice(null)} />}
+                {error && (
+                    <div role="alert" className="alert alert-error alert-soft mb-4">
+                        <span>{error}</span>
+                    </div>
+                )}
                 <div className="overflow-x-auto">
                     <table className="table-zebra table">
                         <thead>
@@ -128,66 +110,77 @@ export default function AdminUsersView() {
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Last sign-in</th>
-                                {canManageUsers && <th>Actions</th>}
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {visibleUsers.map((user: IUserAccount) => (
-                                <tr key={user.id}>
-                                    <td>
-                                        <PersonCell name={user.name} />
-                                    </td>
-                                    <td>{user.email}</td>
-                                    <td>{roleLabels[user.role]}</td>
-                                    <td>
-                                        {user.isLocked ? (
-                                            <span className="badge badge-error badge-sm">Locked</span>
-                                        ) : (
-                                            <span className="badge badge-success badge-sm">Active</span>
-                                        )}
-                                    </td>
-                                    <td>{user.lastSignIn ?? "Never"}</td>
-                                    {canManageUsers && (
+                            {visibleUsers.map((user: IUserAccount) => {
+                                const isSelf: boolean = user.id === currentUserId;
+                                return (
+                                    <tr key={user.id}>
                                         <td>
-                                            <div className="flex items-center gap-1">
-                                                {user.isLocked ? (
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        aria-label={`Unlock ${user.name}`}
-                                                        onClick={() => setLocked(user, false)}
-                                                    >
-                                                        <Icon name="lock_open" />
-                                                        Unlock
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        aria-label={`Block ${user.name}`}
-                                                        onClick={() => setPending({ user, action: "block" })}
-                                                    >
-                                                        <Icon name="block" />
-                                                        Block
-                                                    </button>
-                                                )}
+                                            <PersonCell name={user.name} />
+                                            {isSelf && <span className="badge badge-sm badge-neutral ml-11">You</span>}
+                                        </td>
+                                        <td>{user.email}</td>
+                                        <td>
+                                            {isSelf ? (
+                                                <span>{roleLabels[user.role]}</span>
+                                            ) : (
+                                                <select
+                                                    className="select select-sm w-32"
+                                                    aria-label={`Role for ${user.name}`}
+                                                    value={user.role}
+                                                    disabled={isWorking}
+                                                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                                                        setPending({ user, role: event.target.value as UserRole })
+                                                    }
+                                                >
+                                                    {ROLES.map((option: UserRole) => (
+                                                        <option key={option} value={option}>
+                                                            {roleLabels[option]}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {user.isLocked ? (
+                                                <span className="badge badge-error badge-sm">Locked</span>
+                                            ) : (
+                                                <span className="badge badge-success badge-sm">Active</span>
+                                            )}
+                                        </td>
+                                        <td>{user.lastSignIn ?? "Never"}</td>
+                                        <td>
+                                            {user.isLocked ? (
                                                 <button
                                                     type="button"
-                                                    className="btn btn-ghost btn-sm text-error"
-                                                    aria-label={`Delete ${user.name}`}
-                                                    onClick={() => setPending({ user, action: "delete" })}
+                                                    className="btn btn-ghost btn-sm"
+                                                    aria-label={`Unlock ${user.name}`}
+                                                    disabled={isWorking}
+                                                    onClick={() =>
+                                                        runAction(
+                                                            () => unlockUserAction(user.id),
+                                                            `Unlocked the account for ${user.name}.`,
+                                                        )
+                                                    }
                                                 >
-                                                    <Icon name="delete" />
-                                                    Delete
+                                                    <Icon name="lock_open" />
+                                                    Unlock
                                                 </button>
-                                            </div>
+                                            ) : (
+                                                <span className="text-base-content/50 text-sm">
+                                                    {isSelf ? "Protected" : ""}
+                                                </span>
+                                            )}
                                         </td>
-                                    )}
-                                </tr>
-                            ))}
+                                    </tr>
+                                );
+                            })}
                             {visibleUsers.length === 0 && (
                                 <tr>
-                                    <td colSpan={canManageUsers ? 6 : 5} className="text-center">
+                                    <td colSpan={6} className="text-center">
                                         Nothing matches these filters.
                                     </td>
                                 </tr>
@@ -198,15 +191,12 @@ export default function AdminUsersView() {
             </div>
             {pending && (
                 <ConfirmDialog
-                    title={pending.action === "block" ? "Block account?" : "Delete account?"}
-                    message={
-                        pending.action === "block"
-                            ? `${pending.user.name} will not be able to sign in until an admin unlocks the account.`
-                            : `This deletes the user account for ${pending.user.name}. It cannot be undone.`
-                    }
-                    confirmLabel={pending.action === "block" ? "Block account" : "Delete account"}
-                    isDestructive
-                    onConfirm={confirmPendingAction}
+                    title="Change role?"
+                    message={`${pending.user.name} will become ${roleLabels[pending.role].toLowerCase()}${
+                        pending.role === "admin" ? " and will be able to manage users and roles" : ""
+                    }.`}
+                    confirmLabel="Change role"
+                    onConfirm={confirmRoleChange}
                     onCancel={() => setPending(null)}
                 />
             )}

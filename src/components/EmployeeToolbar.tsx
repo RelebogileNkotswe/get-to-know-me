@@ -31,12 +31,12 @@ export default function EmployeeToolbar({
 
     return (
         <section className="bg-base-100 border-base-300 flex flex-wrap items-center gap-3 border-b px-6 py-3">
-            <label className="input w-full sm:w-72">
+            <label className="input w-full sm:w-80">
                 <Icon name="search" />
                 <input
                     type="search"
-                    placeholder="Search employees"
-                    aria-label="Search employees"
+                    placeholder="Search name, position or profile text"
+                    aria-label="Search by name, position or profile text"
                     value={search}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => onSearchChange(event.target.value)}
                 />

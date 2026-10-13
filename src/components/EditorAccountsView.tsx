@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { authService } from "../logic/auth/AuthService";
 import { hasRoleAtLeast } from "../models/UserRole";
 import { matchesAccountStatus, type AccountStatusFilter, type IEditorAccount } from "../models/EditorAccount";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
+import { useCurrentRole } from "./CurrentUserProvider";
 import EditorToolbar from "./EditorToolbar";
 import Icon from "./Icon";
 import PersonCell from "./PersonCell";
@@ -27,7 +27,7 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
     const [pendingDelete, setPendingDelete] = useState<IEditorAccount | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
 
-    const canDeleteProfiles: boolean = hasRoleAtLeast(authService.getCurrentRole(), "editor");
+    const canDeleteProfiles: boolean = hasRoleAtLeast(useCurrentRole(), "editor");
 
     function confirmDeleteProfile(): void {
         if (!pendingDelete) {
@@ -111,6 +111,9 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                                             <span className="badge badge-success badge-sm">Has profile</span>
                                         ) : (
                                             <span className="badge badge-ghost badge-sm">No profile</span>
+                                        )}
+                                        {account.profileRequested && (
+                                            <span className="badge badge-info badge-sm ml-1">Requested</span>
                                         )}
                                     </td>
                                     <td>

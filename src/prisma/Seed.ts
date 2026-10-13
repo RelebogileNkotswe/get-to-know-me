@@ -1,5 +1,8 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "../logic/auth/PasswordHasher";
+import { ALLOWED_EMAIL_DOMAIN } from "../models/ProfileForm";
+import { validatePassword } from "../models/Password";
 import { PrismaClient } from "./generated/client";
 
 // Local development data only. Generic sample people; never add real personal information here.
@@ -64,6 +67,35 @@ const sampleUsers = [
     { email: "sample4@singular.co.za", role: "viewer" as const },
 ];
 
+/**
+ * Creates the first admin for local development from SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env, so
+ * no credentials are written in code. Every account starts as a viewer and only an admin can promote people,
+ * so someone has to start as an admin. Running it again resets that admin's password to the value in .env.
+ */
+async function seedAdmin(): Promise<void> {
+    const email: string = (process.env.SEED_ADMIN_EMAIL ?? "").trim().toLowerCase();
+    const password: string = process.env.SEED_ADMIN_PASSWORD ?? "";
+    if (email === "" && password === "") {
+        console.log("Skipped the admin user: set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD in .env to create one.");
+        return;
+    }
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("The seed script must not create an admin in production.");
+    }
+    if (!email.endsWith(ALLOWED_EMAIL_DOMAIN) || email.length <= ALLOWED_EMAIL_DOMAIN.length) {
+        throw new Error(`SEED_ADMIN_EMAIL must be an address ending in ${ALLOWED_EMAIL_DOMAIN}.`);
+    }
+    const passwordError: string | null = validatePassword(password);
+    if (passwordError) {
+        throw new Error(`SEED_ADMIN_PASSWORD is not acceptable: ${passwordError}`);
+    }
+
+    const passwordHash: string = await hashPassword(password);
+    const data = { passwordHash, role: "admin" as const, emailVerifiedAt: new Date() };
+    await prisma.user.upsert({ where: { email }, create: { email, ...data }, update: data });
+    console.log(`Admin user ready: ${email}`);
+}
+
 async function main(): Promise<void> {
     for (const profile of sampleProfiles) {
         const data = { ...profile, startDate: new Date(profile.startDate), status: "published" as const };
@@ -80,9 +112,11 @@ async function main(): Promise<void> {
 
     await prisma.setting.upsert({
         where: { key: "combinedTextLimit" },
-        create: { key: "combinedTextLimit", value: 90 },
+        create: { key: "combinedTextLimit", value: 500 },
         update: {},
     });
+
+    await seedAdmin();
 }
 
 main()

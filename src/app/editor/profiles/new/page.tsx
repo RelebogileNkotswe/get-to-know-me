@@ -1,6 +1,8 @@
 import ProfileForm from "../../../../components/ProfileForm";
+import { requireUser } from "../../../../logic/auth/RequireUser";
 
-export default function CreateProfilePage() {
+export default async function CreateProfilePage() {
+    await requireUser("editor");
     return (
         <div className="p-6">
             <h1 className="text-2xl font-semibold">Create profile</h1>

@@ -15,6 +15,9 @@ export function getBreadcrumbs(pathname: string): IBreadcrumb[] {
     if (pathname === "/") {
         return [{ label: "Home" }];
     }
+    if (/^\/employees\/[^/]+$/.test(pathname)) {
+        return [home, { label: "Employee profile" }];
+    }
     if (pathname === "/editor") {
         return [home, { label: "Create/edit profile" }];
     }

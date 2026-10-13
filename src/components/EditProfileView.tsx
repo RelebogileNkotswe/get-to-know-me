@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { deleteProfileAction } from "../app/editor/profiles/actions";
 import type { IAccountStatus } from "../interface/profiles/ProfileService";
-import { authService } from "../logic/auth/AuthService";
 import type { IProfileFormValues } from "../models/ProfileForm";
 import { hasRoleAtLeast } from "../models/UserRole";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
+import { useCurrentRole } from "./CurrentUserProvider";
 import Icon from "./Icon";
 import ProfileForm from "./ProfileForm";
 
 type PendingAction = "delete-profile" | "block" | "delete-account";
 
 interface IEditProfileViewProps {
+    profileId: string;
     profile: IProfileFormValues;
     accountStatus: IAccountStatus;
     currentPhotoUrl?: string;
@@ -23,8 +25,13 @@ interface IEditProfileViewProps {
  * Edit profile page body: the profile form plus the actions available for this person, depending on
  * the signed-in role and on the state of their account.
  */
-export default function EditProfileView({ profile, accountStatus, currentPhotoUrl }: IEditProfileViewProps) {
-    const role = authService.getCurrentRole();
+export default function EditProfileView({
+    profileId,
+    profile,
+    accountStatus,
+    currentPhotoUrl,
+}: IEditProfileViewProps) {
+    const role = useCurrentRole();
     const canDeleteProfile: boolean = hasRoleAtLeast(role, "editor");
     const canManageAccount: boolean = hasRoleAtLeast(role, "admin");
 
@@ -35,10 +42,20 @@ export default function EditProfileView({ profile, accountStatus, currentPhotoUr
 
     const name: string = `${profile.firstName} ${profile.lastName}`.trim();
 
-    // TODO: the actions below only change the state on this page until the API exists.
+    // TODO: unlock, block and delete account only change the state on this page until the account API exists.
     function unlockAccount(): void {
         setAccount((current: IAccountStatus) => ({ ...current, isLocked: false }));
         setNotice(`Unlocked the account for ${name}.`);
+    }
+
+    async function deleteProfile(): Promise<void> {
+        const deleted: boolean = await deleteProfileAction(profileId);
+        if (deleted) {
+            setIsProfileDeleted(true);
+            setNotice(null);
+        } else {
+            setNotice(`Could not delete the profile for ${name}. It may already be deleted, or you may not be allowed.`);
+        }
     }
 
     function confirmPendingAction(): void {
@@ -49,8 +66,7 @@ export default function EditProfileView({ profile, accountStatus, currentPhotoUr
             setAccount({ hasAccount: false, isLocked: false });
             setNotice(`Deleted the user account for ${name}.`);
         } else if (pending === "delete-profile") {
-            setIsProfileDeleted(true);
-            setNotice(null);
+            void deleteProfile();
         }
         setPending(null);
     }
@@ -145,7 +161,12 @@ export default function EditProfileView({ profile, accountStatus, currentPhotoUr
                     </Link>
                 </div>
             ) : (
-                <ProfileForm mode="edit" initialValues={profile} currentPhotoUrl={currentPhotoUrl} />
+                <ProfileForm
+                    mode="edit"
+                    profileId={profileId}
+                    initialValues={profile}
+                    currentPhotoUrl={currentPhotoUrl}
+                />
             )}
             {pending && (
                 <ConfirmDialog
