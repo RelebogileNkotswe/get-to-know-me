@@ -2,12 +2,16 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import type { ChangePasswordResult, IAuthService, SignInResult } from "../../interface/auth/AuthService";
+import { AuditAction, AuditActorType } from "../../models/Audit";
 import type { ICurrentUser } from "../../models/CurrentUser";
 import { validatePassword } from "../../models/Password";
 import { ALLOWED_EMAIL_DOMAIN } from "../../models/ProfileForm";
 import { SESSION_COOKIE } from "../../models/SessionCookie";
+import type { UserRole } from "../../models/UserRole";
 import { db } from "../../prisma/Database";
+import type { Prisma } from "../../prisma/generated/client";
 import { ServerUtils } from "../../utils/ServerUtils";
+import { recordAuditEvent } from "../audit/AuditRecorder";
 import { hashPassword, verifyPassword } from "./PasswordHasher";
 
 /** How long a session lasts. TODO: the spec does not say; 8 hours is a placeholder. */
@@ -21,15 +25,31 @@ const SIGN_IN_ERROR = "Invalid email or password, or the account is locked. Ask 
 // Checked when the email is unknown, so unknown and known emails take about the same time to answer.
 const dummyHash: Promise<string> = hashPassword("password-used-only-to-even-out-timing");
 
-/** Counts a wrong password and locks the account once it reaches the limit. */
+/** Counts a wrong password and locks the account once it reaches the limit, recording the lock in the audit log. */
 async function recordFailedAttempt(userId: string): Promise<void> {
     const updated = await db.user.update({
         where: { id: userId },
         data: { failedSignInAttempts: { increment: 1 } },
     });
-    if (updated.failedSignInAttempts >= MAX_FAILED_SIGN_IN_ATTEMPTS) {
-        await db.user.update({ where: { id: userId }, data: { lockedAt: new Date() } });
+    if (updated.failedSignInAttempts < MAX_FAILED_SIGN_IN_ATTEMPTS) {
+        return;
     }
+    await db.$transaction(async (tx: Prisma.TransactionClient): Promise<void> => {
+        // Only an account that is not locked yet is locked, so one lock is recorded once.
+        const locked = await tx.user.updateMany({
+            where: { id: userId, lockedAt: null },
+            data: { lockedAt: new Date() },
+        });
+        if (locked.count > 0) {
+            await recordAuditEvent(tx, {
+                action: AuditAction.AccountLocked,
+                actor: { type: AuditActorType.System },
+                targetId: userId,
+                targetEmail: updated.email,
+                details: { failedSignInAttempts: updated.failedSignInAttempts },
+            });
+        }
+    });
 }
 
 async function startSession(userId: string): Promise<void> {
@@ -60,7 +80,8 @@ const readCurrentUser = cache(async (): Promise<ICurrentUser | null> => {
     if (!session || session.expiresAt <= new Date() || session.user.lockedAt !== null) {
         return null;
     }
-    return { id: session.user.id, email: session.user.email, role: session.user.role };
+    // The database only holds valid roles, so its value is a UserRole.
+    return { id: session.user.id, email: session.user.email, role: session.user.role as UserRole };
 });
 
 export const authService: IAuthService = {

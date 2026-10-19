@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { deleteProfileAction } from "../app/editor/profiles/actions";
-import { hasRoleAtLeast } from "../models/UserRole";
-import { profileStatusLabels } from "../models/ProfileStatus";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
+import { profileStatusLabels, ProfileStatus } from "../models/ProfileStatus";
 import {
-    EMPTY_EDITOR_ACCOUNT_FILTER,
+    emptyEditorAccountFilter,
     editorAccountListPath,
     type AccountStatusFilter,
     type IEditorAccount,
@@ -37,13 +37,13 @@ export default function EditorAccountsView({ accounts, filter }: IEditorAccounts
     const { inputs, isLoading, typeText, choose, clear }: IServerFilter<IEditorAccountFilter> = useServerFilter(
         filter,
         editorAccountListPath,
-        EMPTY_EDITOR_ACCOUNT_FILTER,
+        emptyEditorAccountFilter,
     );
     const [pendingDelete, setPendingDelete] = useState<IEditorAccount | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [isDeleting, startDeleting] = useTransition();
 
-    const canDeleteProfiles: boolean = hasRoleAtLeast(useCurrentRole(), "editor");
+    const canDeleteProfiles: boolean = hasRoleAtLeast(useCurrentRole(), UserRole.Editor);
 
     function confirmDeleteProfile(): void {
         if (!pendingDelete) {
@@ -115,7 +115,8 @@ export default function EditorAccountsView({ accounts, filter }: IEditorAccounts
                                     <td>{account.startDate ?? "—"}</td>
                                     <td>
                                         {account.hasProfile ? (
-                                            account.profileStatus === "published" || account.profileStatus === null ? (
+                                            account.profileStatus === ProfileStatus.Published ||
+                                            account.profileStatus === null ? (
                                                 <span className="badge badge-success badge-sm">Has profile</span>
                                             ) : (
                                                 <span className="badge badge-warning badge-sm">

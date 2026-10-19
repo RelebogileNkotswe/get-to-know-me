@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { authService } from "../../../logic/auth/AuthService";
 import { photoService } from "../../../logic/photos/PhotoService";
-import { hasRoleAtLeast } from "../../../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../../../models/UserRole";
 
 /**
  * Sends a profile's photo to a signed-in user. Photos are never public: anyone not signed in gets nothing, and a viewer
@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, context: RouteContext<"/photos/
 
     const { profileId } = await context.params;
     const photo = await photoService.getPhoto(profileId);
-    if (!photo || (!photo.isPublished && !hasRoleAtLeast(user.role, "editor"))) {
+    if (!photo || (!photo.isPublished && !hasRoleAtLeast(user.role, UserRole.Editor))) {
         return new Response(null, { status: 404 });
     }
 

@@ -43,7 +43,7 @@ export interface IEditorAccountFilter extends IPageRequest {
 /** Results per page on the editor list until the person picks another size. */
 export const EDITOR_ACCOUNT_PAGE_SIZE = 10;
 
-export const EMPTY_EDITOR_ACCOUNT_FILTER: IEditorAccountFilter = {
+export const emptyEditorAccountFilter: IEditorAccountFilter = {
     search: "",
     status: "all",
     startedFrom: "",
@@ -68,5 +68,5 @@ export function editorAccountFilterFromParams(params: SearchParams): IEditorAcco
 
 /** Address of the editor list filtered by these values. Unused filters are left out of the address. */
 export function editorAccountListPath(filter: IEditorAccountFilter): string {
-    return ClientUtils.pathWithParams("/editor", filter, EMPTY_EDITOR_ACCOUNT_FILTER);
+    return ClientUtils.pathWithParams("/editor", filter, emptyEditorAccountFilter);
 }

@@ -29,7 +29,7 @@ export interface IEmployeeFilter extends IPageRequest {
 /** Results per page on the employee list until the person picks another size. */
 export const EMPLOYEE_PAGE_SIZE = 20;
 
-export const EMPTY_EMPLOYEE_FILTER: IEmployeeFilter = {
+export const emptyEmployeeFilter: IEmployeeFilter = {
     search: "",
     startedFrom: "",
     page: 1,
@@ -48,7 +48,7 @@ export function employeeFilterFromParams(params: SearchParams): IEmployeeFilter 
 
 /** Address of the employee list filtered by these values. Unused filters are left out of the address. */
 export function employeeListPath(filter: IEmployeeFilter): string {
-    return ClientUtils.pathWithParams("/", filter, EMPTY_EMPLOYEE_FILTER);
+    return ClientUtils.pathWithParams("/", filter, emptyEmployeeFilter);
 }
 
 /** How many days after starting someone still counts as a new starter. */

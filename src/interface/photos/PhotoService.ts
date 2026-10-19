@@ -1,3 +1,5 @@
+import type { AuditActor } from "../../models/Audit";
+
 /** Outcome of saving a photo: success, or a message that can be shown to the person who uploaded it. */
 export type SavePhotoResult = { ok: true } | { ok: false; error: string };
 
@@ -15,10 +17,11 @@ export interface IStoredPhoto {
  */
 export interface IPhotoService {
     /**
-     * Checks the image, scales it to the portrait size, compresses it and stores it, replacing any earlier photo.
-     * Refuses files over 5 MB and anything that is not a real JPG, PNG or WebP image, whatever the browser claims.
+     * Checks the image, scales it to the portrait size, compresses it and stores it, replacing any earlier photo, and
+     * records it in the audit log. Refuses files over 5 MB and anything that is not a real JPG, PNG or WebP image,
+     * whatever the browser claims.
      */
-    savePhoto(profileId: string, image: Uint8Array): Promise<SavePhotoResult>;
+    savePhoto(profileId: string, image: Uint8Array, actor: AuditActor): Promise<SavePhotoResult>;
 
     /** Returns the stored photo, or null when the profile has none. */
     getPhoto(profileId: string): Promise<IStoredPhoto | null>;

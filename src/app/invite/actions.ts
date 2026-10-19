@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { SubmitInviteResult } from "../../interface/invites/InviteService";
+import type { IOpenInvite, SubmitInviteResult } from "../../interface/invites/InviteService";
 import type { SavePhotoResult } from "../../interface/photos/PhotoService";
 import { inviteService } from "../../logic/invites/InviteService";
 import { photoService } from "../../logic/photos/PhotoService";
+import { AuditActorType } from "../../models/Audit";
 import type { IProfileFormValues } from "../../models/ProfileForm";
 
 /**
@@ -16,11 +17,14 @@ export async function uploadInvitePhotoAction(token: string, formData: FormData)
     if (!(file instanceof File)) {
         return { ok: false, error: "Choose a photo first." };
     }
-    const profileId: string | null = await inviteService.findOpenInviteProfileId(String(token));
-    if (profileId === null) {
+    const invite: IOpenInvite | null = await inviteService.findOpenInvite(String(token));
+    if (invite === null) {
         return { ok: false, error: "This link no longer works." };
     }
-    return photoService.savePhoto(profileId, new Uint8Array(await file.arrayBuffer()));
+    return photoService.savePhoto(invite.profileId, new Uint8Array(await file.arrayBuffer()), {
+        type: AuditActorType.Invitee,
+        email: invite.companyEmail,
+    });
 }
 
 /**

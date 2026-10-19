@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "../app/login/actions";
 import { roleLabels } from "../models/UserAccount";
-import { hasRoleAtLeast, type UserRole } from "../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 import { useCurrentUser } from "./CurrentUserProvider";
 import { DRAWER_TOGGLE_ID } from "./DrawerConstants";
 import Icon from "./Icon";
@@ -22,7 +22,7 @@ const linkActive: string = "bg-brand-green text-brand-navy";
 export default function SideMenu() {
     const pathname: string = usePathname();
     const user = useCurrentUser();
-    const currentRole: UserRole = user?.role ?? "viewer";
+    const currentRole: UserRole = user?.role ?? UserRole.Viewer;
     const reviewCount: number = user?.awaitingReviewCount ?? 0;
 
     function closeDrawer(): void {

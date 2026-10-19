@@ -10,7 +10,7 @@ export interface IPendingInvite {
     email: string;
     position: string | null;
     /** "invited" (link sent, nothing submitted yet) or "awaiting_review" (submitted, waiting for review). */
-    status: Exclude<ProfileStatus, "published">;
+    status: Exclude<ProfileStatus, ProfileStatus.Published>;
     /** ISO date the link stops working. */
     expiresOn: string;
     isExpired: boolean;

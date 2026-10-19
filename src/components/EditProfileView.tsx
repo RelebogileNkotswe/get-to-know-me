@@ -5,8 +5,8 @@ import { useState, useTransition } from "react";
 import { deleteProfileAction, publishProfileAction } from "../app/editor/profiles/actions";
 import type { IAccountStatus } from "../interface/profiles/ProfileService";
 import type { IProfileFormValues } from "../models/ProfileForm";
-import { profileStatusLabels, type ProfileStatus } from "../models/ProfileStatus";
-import { hasRoleAtLeast } from "../models/UserRole";
+import { profileStatusLabels, ProfileStatus } from "../models/ProfileStatus";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
 import { useCurrentRole } from "./CurrentUserProvider";
@@ -36,8 +36,8 @@ export default function EditProfileView({
     currentPhotoUrl,
 }: IEditProfileViewProps) {
     const role = useCurrentRole();
-    const canDeleteProfile: boolean = hasRoleAtLeast(role, "editor");
-    const canManageAccount: boolean = hasRoleAtLeast(role, "admin");
+    const canDeleteProfile: boolean = hasRoleAtLeast(role, UserRole.Editor);
+    const canManageAccount: boolean = hasRoleAtLeast(role, UserRole.Admin);
 
     const [account, setAccount] = useState<IAccountStatus>(accountStatus);
     const [isProfileDeleted, setIsProfileDeleted] = useState<boolean>(false);
@@ -52,7 +52,7 @@ export default function EditProfileView({
         startPublishing(async () => {
             const published: boolean = await publishProfileAction(profileId);
             if (published) {
-                setStatus("published");
+                setStatus(ProfileStatus.Published);
                 setNotice(`Published the profile for ${name}. It now shows in the employee list.`);
             } else {
                 setNotice(`Could not publish the profile for ${name}. It may already be published.`);
@@ -120,20 +120,20 @@ export default function EditProfileView({
             <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-semibold">
-                        {status === "awaiting_review" ? "Review profile" : "Edit profile"}
+                        {status === ProfileStatus.AwaitingReview ? "Review profile" : "Edit profile"}
                     </h1>
                     <p className="text-base-content/70 mt-2">
-                        {status === "awaiting_review"
+                        {status === ProfileStatus.AwaitingReview
                             ? `${name} has submitted their details. Change anything that needs it, save, then publish.`
                             : `Update the details for ${name}.`}
                     </p>
                 </div>
                 {!isProfileDeleted && (
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`badge ${status === "published" ? "badge-success" : "badge-warning"}`}>
+                        <span className={`badge ${status === ProfileStatus.Published ? "badge-success" : "badge-warning"}`}>
                             {profileStatusLabels[status]}
                         </span>
-                        {status === "awaiting_review" && (
+                        {status === ProfileStatus.AwaitingReview && (
                             <button
                                 type="button"
                                 className="btn btn-primary btn-sm"

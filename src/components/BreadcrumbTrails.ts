@@ -6,6 +6,7 @@ export interface IBreadcrumb {
 
 const home: IBreadcrumb = { label: "Home", href: "/" };
 const editor: IBreadcrumb = { label: "Create/edit profile", href: "/editor" };
+const admin: IBreadcrumb = { label: "Admin", href: "/admin" };
 
 /**
  * Returns the breadcrumb trail for a route. Add an entry here for every new page.
@@ -32,6 +33,9 @@ export function getBreadcrumbs(pathname: string): IBreadcrumb[] {
     }
     if (pathname === "/admin") {
         return [home, { label: "Admin" }];
+    }
+    if (pathname === "/admin/audit") {
+        return [home, admin, { label: "Audit log" }];
     }
     if (pathname === "/profile") {
         return [home, { label: "Profile" }];

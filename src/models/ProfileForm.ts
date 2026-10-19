@@ -35,6 +35,20 @@ export interface IProfileFormValues {
     background: string;
 }
 
+/** Name shown for each form field, such as in the audit log's list of changed fields. */
+export const profileFieldLabels: Record<keyof IProfileFormValues, string> = {
+    firstName: "First name",
+    lastName: "Last name",
+    preferredName: "Preferred name",
+    position: "Position",
+    startDate: "Start date",
+    companyEmail: "Company email",
+    linkedIn: "LinkedIn",
+    hobbies: "Beyond the office gates",
+    somethingInteresting: "Beyond the bio",
+    background: "Background",
+};
+
 /** Error messages keyed by form field; a field without an entry is valid. */
 export type ProfileFormErrors = Partial<Record<keyof IProfileFormValues | "photo", string>>;
 
