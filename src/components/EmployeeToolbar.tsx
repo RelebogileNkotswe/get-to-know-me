@@ -7,6 +7,8 @@ interface IEmployeeToolbarProps {
     onSearchChange: (value: string) => void;
     startDate: string;
     onStartDateChange: (value: string) => void;
+    /** Clears the search and the start date together. */
+    onClear: () => void;
     view: EmployeeView;
     onViewChange: (view: EmployeeView) => void;
 }
@@ -19,15 +21,11 @@ export default function EmployeeToolbar({
     onSearchChange,
     startDate,
     onStartDateChange,
+    onClear,
     view,
     onViewChange,
 }: IEmployeeToolbarProps) {
     const hasFilters: boolean = search !== "" || startDate !== "";
-
-    function clearFilters(): void {
-        onSearchChange("");
-        onStartDateChange("");
-    }
 
     return (
         <section className="bg-base-100 border-base-300 flex flex-wrap items-center gap-3 border-b px-6 py-3">
@@ -42,7 +40,7 @@ export default function EmployeeToolbar({
                 />
             </label>
             <DatePicker label="Started on or after" value={startDate} onChange={onStartDateChange} />
-            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={clearFilters}>
+            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={onClear}>
                 <Icon name="filter_alt_off" />
                 Clear
             </button>

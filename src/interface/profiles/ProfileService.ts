@@ -1,5 +1,6 @@
-import type { IEditorAccount } from "../../models/EditorAccount";
-import type { IEmployee } from "../../models/Employee";
+import type { IEditorAccount, IEditorAccountFilter } from "../../models/EditorAccount";
+import type { IEmployee, IEmployeeFilter } from "../../models/Employee";
+import type { IPage } from "../../models/Paging";
 import type { IProfileFormValues, ProfileFormErrors } from "../../models/ProfileForm";
 import type { ProfileStatus } from "../../models/ProfileStatus";
 
@@ -38,11 +39,27 @@ export interface IProfileService {
     /** Returns the status of the user account linked to the profile by email. */
     getAccountStatus(profileId: string): Promise<IAccountStatus>;
 
-    /** Returns everyone with a profile, a user account, or both, for the editor list. */
-    listEditorAccounts(): Promise<IEditorAccount[]>;
+    /**
+     * Returns one page of everyone with a profile, a user account, or both, that matches the filter, for the editor list.
+     * People with a profile come first (by name), then accounts without one (by email). Every word of the search must
+     * appear (in any case) in the name, preferred name, email or position; people without a profile are matched on
+     * their email only. A start date that is not a valid ISO date is ignored.
+     */
+    listEditorAccounts(filter: IEditorAccountFilter): Promise<IPage<IEditorAccount>>;
 
-    /** Returns the published profiles shown in the employee list. */
-    listPublishedEmployees(): Promise<IEmployee[]>;
+    /**
+     * Returns one page of the published profiles that match the filter, for the employee list. Every word of the search
+     * must appear (in any case) in the name, preferred name, position or one of the three profile text sections. A start
+     * date that is not a valid ISO date is ignored.
+     */
+    listPublishedEmployees(filter: IEmployeeFilter): Promise<IPage<IEmployee>>;
+
+    /**
+     * Returns the published profiles of new starters for the carousel, filtered the same way as the employee list, so the
+     * carousel only shows people who also match the list below it. The carousel is not paged; its page number and size
+     * are ignored.
+     */
+    listNewStarters(filter: IEmployeeFilter): Promise<IEmployee[]>;
 
     /**
      * Validates and saves a new profile, published straight away. Fails with an error on the field when the

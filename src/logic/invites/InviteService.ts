@@ -9,17 +9,14 @@ import { INVITE_VALID_DAYS, type IPendingInvite } from "../../models/Invite";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
 import { db } from "../../prisma/Database";
 import type { Invite, Profile } from "../../prisma/generated/client";
-import { hasPrismaCode, toDatabaseData, uuidPattern } from "../profiles/ProfileMapping";
-import { generateInviteToken, hashInviteToken } from "./InviteToken";
+import { ClientUtils } from "../../utils/ClientUtils";
+import { ServerUtils } from "../../utils/ServerUtils";
+import { toDatabaseData } from "../profiles/ProfileMapping";
 
 const LINK_NO_LONGER_WORKS = "This link no longer works.";
 
 function newExpiry(): Date {
     return new Date(Date.now() + INVITE_VALID_DAYS * 24 * 60 * 60 * 1000);
-}
-
-function isoDate(value: Date): string {
-    return value.toISOString().slice(0, 10);
 }
 
 function fullName(profile: Profile): string {
@@ -32,7 +29,7 @@ function toFormValues(profile: Profile): IProfileFormValues {
         lastName: profile.lastName ?? "",
         preferredName: profile.preferredName ?? "",
         position: profile.position ?? "",
-        startDate: profile.startDate ? isoDate(profile.startDate) : "",
+        startDate: ClientUtils.toUtcIsoDate(profile.startDate),
         companyEmail: profile.companyEmail,
         linkedIn: profile.linkedIn ?? "",
         hobbies: profile.hobbies ?? "",
@@ -49,7 +46,7 @@ async function findUsableInvite(
         return { state: "invalid" };
     }
     const invite = await db.invite.findUnique({
-        where: { tokenHash: hashInviteToken(token) },
+        where: { tokenHash: ServerUtils.hashToken(token) },
         include: { profile: true },
     });
     if (!invite) {
@@ -70,18 +67,18 @@ export const inviteService: IInviteService = {
         if (Object.keys(errors).length > 0) {
             return { ok: false, errors };
         }
-        const token: string = generateInviteToken();
+        const token: string = ServerUtils.generateToken();
         try {
             const profile = await db.profile.create({
                 data: {
                     ...toDatabaseData(values),
                     status: "invited",
-                    invite: { create: { tokenHash: hashInviteToken(token), expiresAt: newExpiry() } },
+                    invite: { create: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() } },
                 },
             });
             return { ok: true, profileId: profile.id, token };
         } catch (error) {
-            if (hasPrismaCode(error, "P2002")) {
+            if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile or an invite." } };
             }
             throw error;
@@ -89,20 +86,20 @@ export const inviteService: IInviteService = {
     },
 
     async renewLink(profileId: string): Promise<string | null> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return null;
         }
-        const token: string = generateInviteToken();
+        const token: string = ServerUtils.generateToken();
         // Only an invite that has not been submitted can be renewed; the old token stops working at once.
         const result = await db.invite.updateMany({
             where: { profileId, submittedAt: null, profile: { status: "invited" } },
-            data: { tokenHash: hashInviteToken(token), expiresAt: newExpiry() },
+            data: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() },
         });
         return result.count > 0 ? token : null;
     },
 
     async cancelInvite(profileId: string): Promise<boolean> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
         // Only a profile still in the "invited" state is removed; a submitted one has the employee's answers and is reviewed instead.
@@ -123,9 +120,9 @@ export const inviteService: IInviteService = {
             email: profile.companyEmail,
             position: profile.position,
             status: profile.status === "awaiting_review" ? "awaiting_review" : "invited",
-            expiresOn: profile.invite ? isoDate(profile.invite.expiresAt) : "",
+            expiresOn: profile.invite ? ClientUtils.toUtcIsoDate(profile.invite.expiresAt) : "",
             isExpired: profile.status === "invited" && profile.invite !== null && profile.invite.expiresAt <= now,
-            submittedOn: profile.invite?.submittedAt ? isoDate(profile.invite.submittedAt) : null,
+            submittedOn: profile.invite?.submittedAt ? ClientUtils.toUtcIsoDate(profile.invite.submittedAt) : null,
         }));
     },
 

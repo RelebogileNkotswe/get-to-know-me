@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { PHOTO_ASPECT_RATIO } from "../models/Photo";
 import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "../models/ProfileForm";
-import { cropToJpeg } from "./CropImage";
+import { ClientUtils } from "../utils/ClientUtils";
 
 interface IProfilePhotoFieldProps {
     /** Called with the cropped photo, or with null and an error message when the file cannot be used. */
@@ -90,7 +90,7 @@ export default function ProfilePhotoField({ onChange, error, currentPhotoUrl }: 
         }
         setIsWorking(true);
         try {
-            const blob: Blob = await cropToJpeg(sourceUrl, croppedArea);
+            const blob: Blob = await ClientUtils.cropToJpeg(sourceUrl, croppedArea);
             const file = new File([blob], "photo.jpg", { type: blob.type });
             setPreviewUrl(URL.createObjectURL(file));
             onChange(file, null);

@@ -2,12 +2,13 @@ import "server-only";
 import type { IPhotoService, IStoredPhoto, SavePhotoResult } from "../../interface/photos/PhotoService";
 import { photoUrl } from "../../models/Photo";
 import { db } from "../../prisma/Database";
-import { hasPrismaCode, uuidPattern } from "../profiles/ProfileMapping";
+import { ClientUtils } from "../../utils/ClientUtils";
+import { ServerUtils } from "../../utils/ServerUtils";
 import { PHOTO_CONTENT_TYPE, processPhoto } from "./PhotoProcessor";
 
 export const photoService: IPhotoService = {
     async savePhoto(profileId: string, image: Uint8Array): Promise<SavePhotoResult> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return { ok: false, error: "That profile no longer exists." };
         }
         const processed = await processPhoto(image);
@@ -24,7 +25,7 @@ export const photoService: IPhotoService = {
             return { ok: true };
         } catch (error) {
             // P2003: the profile was deleted while the photo was being sent.
-            if (hasPrismaCode(error, "P2003")) {
+            if (ServerUtils.hasPrismaCode(error, "P2003")) {
                 return { ok: false, error: "That profile no longer exists." };
             }
             throw error;
@@ -32,7 +33,7 @@ export const photoService: IPhotoService = {
     },
 
     async getPhoto(profileId: string): Promise<IStoredPhoto | null> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return null;
         }
         const photo = await db.profilePhoto.findUnique({
@@ -50,7 +51,7 @@ export const photoService: IPhotoService = {
     },
 
     async getPhotoUrl(profileId: string): Promise<string | null> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return null;
         }
         const photo = await db.profilePhoto.findUnique({ where: { profileId }, select: { updatedAt: true } });

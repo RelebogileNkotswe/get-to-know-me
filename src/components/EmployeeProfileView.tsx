@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getInitials } from "../models/Employee";
 import type { IProfileFormValues } from "../models/ProfileForm";
+import { ClientUtils } from "../utils/ClientUtils";
 import Icon from "./Icon";
 
 interface IEmployeeProfileViewProps {
@@ -17,16 +17,6 @@ interface IProfileSection {
     caption: string;
     icon: string;
     text: string;
-}
-
-/** Date such as 2026-10-07 shown as "7 October 2026". */
-function formatStartDate(isoDate: string): string {
-    return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-ZA", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "UTC",
-    });
 }
 
 /**
@@ -89,7 +79,7 @@ export default function EmployeeProfileView({ profileId, profile, canEdit, photo
                             )}
                             {profile.startDate && (
                                 <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">
-                                    Started: {formatStartDate(profile.startDate)}
+                                    Started: {ClientUtils.formatLongDate(profile.startDate)}
                                 </span>
                             )}
                         </div>
@@ -128,7 +118,7 @@ export default function EmployeeProfileView({ profileId, profile, canEdit, photo
                                 className="relative flex aspect-[4/5] w-28 items-center justify-center rounded-2xl border-4 border-white bg-[#16314f] text-3xl font-semibold text-white/90"
                                 aria-hidden="true"
                             >
-                                {getInitials(name)}
+                                {ClientUtils.getInitials(name)}
                             </div>
                         )}
                     </div>

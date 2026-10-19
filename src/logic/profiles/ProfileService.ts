@@ -5,18 +5,103 @@ import type {
     IProfileService,
     SaveProfileResult,
 } from "../../interface/profiles/ProfileService";
-import type { IEditorAccount } from "../../models/EditorAccount";
-import { isNewStarter, type IEmployee } from "../../models/Employee";
+import type { IEditorAccount, IEditorAccountFilter } from "../../models/EditorAccount";
+import { newStarterDates, type IEmployee, type IEmployeeFilter, type INewStarterDates } from "../../models/Employee";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
 import { photoUrl } from "../../models/Photo";
+import type { IPage } from "../../models/Paging";
 import type { ProfileStatus } from "../../models/ProfileStatus";
 import { db } from "../../prisma/Database";
-import type { Profile } from "../../prisma/generated/client";
-import { hasPrismaCode, toDatabaseData, uuidPattern } from "./ProfileMapping";
+import type { Prisma, Profile } from "../../prisma/generated/client";
+import { ClientUtils } from "../../utils/ClientUtils";
+import { ServerUtils } from "../../utils/ServerUtils";
+import { toDatabaseData } from "./ProfileMapping";
 
-/** ISO date (e.g. 2026-09-14) for a date-only column, or an empty string. */
-function toIsoDate(value: Date | null): string {
-    return value ? value.toISOString().slice(0, 10) : "";
+/**
+ * One condition per search word for the employee list: the word must appear, in any case, in the name, preferred name,
+ * position or one of the three profile text sections.
+ */
+function employeeSearchConditions(search: string): Prisma.ProfileWhereInput[] {
+    const conditions: Prisma.ProfileWhereInput[] = [];
+    for (const word of ServerUtils.searchWords(search)) {
+        const contains = ServerUtils.containsText(word);
+        conditions.push({
+            OR: [
+                { firstName: contains },
+                { lastName: contains },
+                { preferredName: contains },
+                { position: contains },
+                { hobbies: contains },
+                { somethingInteresting: contains },
+                { background: contains },
+            ],
+        });
+    }
+    return conditions;
+}
+
+/** Published profiles that match the employee list filter; a start date that is not a valid ISO date is ignored. */
+function publishedEmployeeConditions(filter: IEmployeeFilter): Prisma.ProfileWhereInput {
+    const where: Prisma.ProfileWhereInput = { status: "published", AND: employeeSearchConditions(filter.search) };
+    if (ClientUtils.isIsoDate(filter.startedFrom)) {
+        where.startDate = { gte: ClientUtils.fromUtcIsoDate(filter.startedFrom) };
+    }
+    return where;
+}
+
+/** One condition per search word for the editor list: the word must appear in the name, preferred name, email or position. */
+function editorSearchConditions(search: string): Prisma.ProfileWhereInput[] {
+    const conditions: Prisma.ProfileWhereInput[] = [];
+    for (const word of ServerUtils.searchWords(search)) {
+        const contains = ServerUtils.containsText(word);
+        conditions.push({
+            OR: [
+                { firstName: contains },
+                { lastName: contains },
+                { preferredName: contains },
+                { companyEmail: contains },
+                { position: contains },
+            ],
+        });
+    }
+    return conditions;
+}
+
+/** Name order for profile lists; the id breaks ties so every page holds the same people each time it is loaded. */
+const PROFILE_ORDER: Prisma.ProfileOrderByWithRelationInput[] = [
+    { firstName: "asc" },
+    { lastName: "asc" },
+    { id: "asc" },
+];
+
+/**
+ * Published profiles matching the condition, as employee list rows, with whether each has a linked account. `skip` and
+ * `take` select one page; leaving them out returns every match.
+ */
+async function findEmployees(where: Prisma.ProfileWhereInput, skip?: number, take?: number): Promise<IEmployee[]> {
+    const profiles = await db.profile.findMany({
+        where,
+        // Only when the photo was last changed is read, never the image itself, so the list stays light.
+        include: { photo: { select: { updatedAt: true } } },
+        orderBy: PROFILE_ORDER,
+        skip,
+        take,
+    });
+    const linkedUsers = await db.user.findMany({
+        where: { email: { in: profiles.map((profile: Profile) => profile.companyEmail) } },
+        select: { email: true },
+    });
+    const linkedEmails = new Set<string>(linkedUsers.map((user: { email: string }) => user.email));
+    return profiles.map((profile) => ({
+        id: profile.id,
+        name: fullName(profile),
+        position: profile.position ?? "",
+        startDate: ClientUtils.toUtcIsoDate(profile.startDate),
+        preferredName: profile.preferredName ?? "",
+        hobbies: profile.hobbies ?? "",
+        hasAccount: linkedEmails.has(profile.companyEmail),
+        photoUrl: profile.photo ? photoUrl(profile.id, profile.photo.updatedAt) : null,
+    }));
 }
 
 function fullName(profile: Profile): string {
@@ -30,7 +115,7 @@ function toFormValues(profile: Profile): IProfileFormValues {
         lastName: profile.lastName ?? "",
         preferredName: profile.preferredName ?? "",
         position: profile.position ?? "",
-        startDate: toIsoDate(profile.startDate),
+        startDate: ClientUtils.toUtcIsoDate(profile.startDate),
         companyEmail: profile.companyEmail,
         linkedIn: profile.linkedIn ?? "",
         hobbies: profile.hobbies ?? "",
@@ -40,7 +125,7 @@ function toFormValues(profile: Profile): IProfileFormValues {
 }
 
 async function findProfile(profileId: string): Promise<Profile | null> {
-    if (!uuidPattern.test(profileId)) {
+    if (!ClientUtils.isUuid(profileId)) {
         return null;
     }
     return db.profile.findUnique({ where: { id: profileId } });
@@ -56,7 +141,7 @@ export const profileService: IProfileService = {
     },
 
     async requestProfile(userId: string): Promise<void> {
-        if (!uuidPattern.test(userId)) {
+        if (!ClientUtils.isUuid(userId)) {
             return;
         }
         const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
@@ -85,72 +170,118 @@ export const profileService: IProfileService = {
         return { hasAccount: user !== null, isLocked: user?.lockedAt != null };
     },
 
-    async listEditorAccounts(): Promise<IEditorAccount[]> {
-        const [profiles, users] = await Promise.all([
-            db.profile.findMany({ orderBy: [{ firstName: "asc" }, { lastName: "asc" }] }),
-            db.user.findMany({
-                select: { id: true, email: true, profileRequestedAt: true },
-                orderBy: { email: "asc" },
-            }),
+    async listEditorAccounts(filter: IEditorAccountFilter): Promise<IPage<IEditorAccount>> {
+        const startedFrom: Date | null = ClientUtils.isIsoDate(filter.startedFrom)
+            ? ClientUtils.fromUtcIsoDate(filter.startedFrom)
+            : null;
+        // Profiles and accounts are linked by email, so every email of each is needed to tell which ones are linked.
+        const [allUsers, allProfiles] = await Promise.all([
+            db.user.findMany({ select: { email: true } }),
+            db.profile.findMany({ select: { companyEmail: true } }),
         ]);
-        const profileEmails = new Set<string>(profiles.map((profile: Profile) => profile.companyEmail));
-        const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
+        const userEmails: string[] = allUsers.map((user: { email: string }) => user.email);
+        const profileEmails: string[] = allProfiles.map((profile: { companyEmail: string }) => profile.companyEmail);
 
-        const accounts: IEditorAccount[] = profiles.map((profile: Profile) => ({
-            id: profile.id,
-            name: fullName(profile),
-            email: profile.companyEmail,
-            position: profile.position,
-            startDate: toIsoDate(profile.startDate) || null,
-            hasProfile: true,
-            hasAccount: userEmails.has(profile.companyEmail),
-            profileRequested: false,
-            profileStatus: profile.status,
-        }));
-        for (const user of users) {
-            if (!profileEmails.has(user.email)) {
-                // Accounts without a profile have no name yet, so the email stands in for it.
-                accounts.push({
-                    id: user.id,
-                    name: user.email,
-                    email: user.email,
-                    position: null,
-                    startDate: null,
-                    hasProfile: false,
-                    hasAccount: true,
-                    profileRequested: user.profileRequestedAt !== null,
-                    profileStatus: null,
-                });
+        let profileWhere: Prisma.ProfileWhereInput | null = null;
+        if (filter.status !== "no-profile") {
+            profileWhere = { AND: editorSearchConditions(filter.search) };
+            if (startedFrom) {
+                profileWhere.startDate = { gte: startedFrom };
+            }
+            if (filter.status === "not-linked") {
+                profileWhere.companyEmail = { notIn: userEmails };
             }
         }
-        return accounts;
+        // Accounts without a profile have no start date, so they are listed only when no start date is chosen.
+        let userWhere: Prisma.UserWhereInput | null = null;
+        if (filter.status !== "not-linked" && startedFrom === null) {
+            userWhere = {
+                email: { notIn: profileEmails },
+                AND: ServerUtils.searchWords(filter.search).map((word: string) => ({
+                    email: ServerUtils.containsText(word),
+                })),
+            };
+        }
+
+        const [profileCount, userCount] = await Promise.all([
+            profileWhere ? db.profile.count({ where: profileWhere }) : Promise.resolve(0),
+            userWhere ? db.user.count({ where: userWhere }) : Promise.resolve(0),
+        ]);
+        const totalCount: number = profileCount + userCount;
+        const page: number = ClientUtils.clampPage(filter.page, totalCount, filter.pageSize);
+
+        // The list shows profiles first, then accounts without a profile, so one page can hold some of each.
+        const skip: number = (page - 1) * filter.pageSize;
+        const profileTake: number = Math.max(0, Math.min(filter.pageSize, profileCount - skip));
+        const userTake: number = filter.pageSize - profileTake;
+        const [profiles, users] = await Promise.all([
+            profileWhere && profileTake > 0
+                ? db.profile.findMany({ where: profileWhere, orderBy: PROFILE_ORDER, skip, take: profileTake })
+                : Promise.resolve([]),
+            userWhere && userTake > 0
+                ? db.user.findMany({
+                      where: userWhere,
+                      select: { id: true, email: true, profileRequestedAt: true },
+                      orderBy: { email: "asc" },
+                      skip: Math.max(0, skip - profileCount),
+                      take: userTake,
+                  })
+                : Promise.resolve([]),
+        ]);
+
+        const linkedEmails = new Set<string>(userEmails);
+        const accounts: IEditorAccount[] = [];
+        for (const profile of profiles) {
+            accounts.push({
+                id: profile.id,
+                name: fullName(profile),
+                email: profile.companyEmail,
+                position: profile.position,
+                startDate: ClientUtils.toUtcIsoDate(profile.startDate) || null,
+                hasProfile: true,
+                hasAccount: linkedEmails.has(profile.companyEmail),
+                profileRequested: false,
+                profileStatus: profile.status,
+            });
+        }
+        for (const user of users) {
+            // Accounts without a profile have no name yet, so the email stands in for it.
+            accounts.push({
+                id: user.id,
+                name: user.email,
+                email: user.email,
+                position: null,
+                startDate: null,
+                hasProfile: false,
+                hasAccount: true,
+                profileRequested: user.profileRequestedAt !== null,
+                profileStatus: null,
+            });
+        }
+        return { items: accounts, page, pageSize: filter.pageSize, totalCount };
     },
 
-    async listPublishedEmployees(): Promise<IEmployee[]> {
-        const [profiles, users] = await Promise.all([
-            db.profile.findMany({
-                where: { status: "published" },
-                // Only when the photo was last changed is read, never the image itself, so the list stays light.
-                include: { photo: { select: { updatedAt: true } } },
-                orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-            }),
-            db.user.findMany({ select: { email: true } }),
-        ]);
-        const userEmails = new Set<string>(users.map((user: { email: string }) => user.email));
-        const today = new Date();
-        return profiles.map((profile) => ({
-            id: profile.id,
-            name: fullName(profile),
-            position: profile.position ?? "",
-            startDate: toIsoDate(profile.startDate),
-            preferredName: profile.preferredName ?? "",
-            hobbies: profile.hobbies ?? "",
-            somethingInteresting: profile.somethingInteresting ?? "",
-            background: profile.background ?? "",
-            hasAccount: userEmails.has(profile.companyEmail),
-            isNewStarter: isNewStarter(toIsoDate(profile.startDate), today),
-            photoUrl: profile.photo ? photoUrl(profile.id, profile.photo.updatedAt) : null,
-        }));
+    async listPublishedEmployees(filter: IEmployeeFilter): Promise<IPage<IEmployee>> {
+        const where: Prisma.ProfileWhereInput = publishedEmployeeConditions(filter);
+        const totalCount: number = await db.profile.count({ where });
+        const page: number = ClientUtils.clampPage(filter.page, totalCount, filter.pageSize);
+        const items: IEmployee[] = await findEmployees(where, (page - 1) * filter.pageSize, filter.pageSize);
+        return { items, page, pageSize: filter.pageSize, totalCount };
+    },
+
+    async listNewStarters(filter: IEmployeeFilter): Promise<IEmployee[]> {
+        const dates: INewStarterDates = newStarterDates(new Date());
+        return findEmployees({
+            AND: [
+                publishedEmployeeConditions(filter),
+                {
+                    startDate: {
+                        gte: ClientUtils.fromUtcIsoDate(dates.earliest),
+                        lte: ClientUtils.fromUtcIsoDate(dates.latest),
+                    },
+                },
+            ],
+        });
     },
 
     async createProfile(values: IProfileFormValues): Promise<SaveProfileResult> {
@@ -165,7 +296,7 @@ export const profileService: IProfileService = {
             });
             return { ok: true, profileId: profile.id };
         } catch (error) {
-            if (hasPrismaCode(error, "P2002")) {
+            if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile." } };
             }
             throw error;
@@ -177,17 +308,17 @@ export const profileService: IProfileService = {
         if (Object.keys(errors).length > 0) {
             return { ok: false, errors };
         }
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
         }
         try {
             const profile = await db.profile.update({ where: { id: profileId }, data: toDatabaseData(values) });
             return { ok: true, profileId: profile.id };
         } catch (error) {
-            if (hasPrismaCode(error, "P2002")) {
+            if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile." } };
             }
-            if (hasPrismaCode(error, "P2025")) {
+            if (ServerUtils.hasPrismaCode(error, "P2025")) {
                 return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
             }
             throw error;
@@ -200,7 +331,7 @@ export const profileService: IProfileService = {
     },
 
     async publishProfile(profileId: string): Promise<boolean> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
         // Only a profile the employee has submitted can be published; an invited one has nothing to review yet.
@@ -216,7 +347,7 @@ export const profileService: IProfileService = {
     },
 
     async deleteProfile(profileId: string): Promise<boolean> {
-        if (!uuidPattern.test(profileId)) {
+        if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
         const result = await db.profile.deleteMany({ where: { id: profileId } });
