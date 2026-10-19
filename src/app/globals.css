@@ -8,6 +8,21 @@
     --color-brand-green: #2fe3a5;
 }
 
+/* PDF export: one A5 sheet, no margins, colours kept even when the print dialog turns background graphics off. */
+@page profile-a5 {
+    size: A5 portrait;
+    margin: 0;
+}
+
+.a5-sheet {
+    page: profile-a5;
+    width: 148mm;
+    height: 210mm;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
 /* New starter carousel: two identical groups of cards side by side, scrolled left by exactly one group, so it loops without a jump. */
 @keyframes new-starters-scroll {
     from {

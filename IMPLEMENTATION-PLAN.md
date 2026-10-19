@@ -176,6 +176,8 @@ Acceptance checks:
 
 ### Phase 8: PDF export
 
+Progress (pdf-export, v0.10.0): print stylesheet approach built. `/employees/<id>/print` (editors and admins) shows the shared `ProfileTemplate` on one A5 sheet and warns when the text overflows it; email and LinkedIn print as plain text. Still open: the logo, whether email and LinkedIn should be left out of the PDF instead, the final character limit, and server-side rendering if a consistent file is required.
+
 - Editors and admins only; viewers never see the button, and the server enforces the role.
 - Same template, fixed A5 page, links not clickable, empty LinkedIn absent.
 - Approach to choose:

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-10-19 - pdf-export
+
+### Added
+- PDF export for editors and admins: "Export as PDF (A5 format)" opens `/employees/<id>/print`, one A5 sheet with no menu, saved through the browser's print dialog. Colours are kept, and email and LinkedIn are plain text.
+- A warning on the print page when the text is too long for one A5 page. The sheet uses tighter spacing, so the current 500-character limit fits.
+- `ProfileTemplate`, shared by the profile page and the print page so the PDF matches the screen.
+
+### Known gaps
+- No server-made PDF file (needs a host that can run a headless browser), the logo is still text, and exports are not in the audit log.
+
 ## [0.9.0] - 2026-10-19 - auditing
 
 ### Added
