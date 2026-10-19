@@ -1,7 +1,7 @@
 "use client";
 
 import { DayPicker } from "react-day-picker";
-import { fromIsoDate, toIsoDate } from "./DateUtils";
+import { ClientUtils } from "../utils/ClientUtils";
 import Icon from "./Icon";
 
 const POPOVER_ID = "date-picker-popover";
@@ -21,10 +21,10 @@ interface IDatePickerProps {
  * Date picker: a DaisyUI input-styled button that opens a React Day Picker calendar in a popover.
  */
 export default function DatePicker({ label, valueOnly = false, value, onChange }: IDatePickerProps) {
-    const selectedDate: Date | undefined = fromIsoDate(value);
+    const selectedDate: Date | undefined = ClientUtils.fromIsoDate(value);
 
     function handleSelect(date: Date | undefined): void {
-        onChange(date ? toIsoDate(date) : "");
+        onChange(date ? ClientUtils.toIsoDate(date) : "");
         document.getElementById(POPOVER_ID)?.hidePopover();
     }
 

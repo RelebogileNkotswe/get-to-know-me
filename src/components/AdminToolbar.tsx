@@ -16,6 +16,8 @@ interface IAdminToolbarProps {
     onLockStatusChange: (lockStatus: LockStatusFilter) => void;
     signedInSince: string;
     onSignedInSinceChange: (value: string) => void;
+    /** Clears every filter together. */
+    onClear: () => void;
 }
 
 /**
@@ -31,15 +33,9 @@ export default function AdminToolbar({
     onLockStatusChange,
     signedInSince,
     onSignedInSinceChange,
+    onClear,
 }: IAdminToolbarProps) {
     const hasFilters: boolean = search !== "" || role !== "all" || lockStatus !== "all" || signedInSince !== "";
-
-    function clearFilters(): void {
-        onSearchChange("");
-        onRoleChange("all");
-        onLockStatusChange("all");
-        onSignedInSinceChange("");
-    }
 
     return (
         <section className="bg-base-100 border-base-300 flex flex-wrap items-center gap-3 border-b px-6 py-3">
@@ -82,7 +78,7 @@ export default function AdminToolbar({
                 ))}
             </select>
             <DatePicker label="Signed in on or after" value={signedInSince} onChange={onSignedInSinceChange} />
-            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={clearFilters}>
+            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={onClear}>
                 <Icon name="filter_alt_off" />
                 Clear
             </button>

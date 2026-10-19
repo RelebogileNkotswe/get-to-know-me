@@ -1,3 +1,5 @@
+import { ClientUtils, type SearchParams } from "../utils/ClientUtils";
+import type { IPageRequest } from "./Paging";
 import type { ProfileStatus } from "./ProfileStatus";
 
 /** A person known to the tool: they may have a Get To Know Me profile, a linked user account, or both. */
@@ -29,14 +31,42 @@ export const accountStatusLabels: Record<AccountStatusFilter, string> = {
     "no-profile": "No profile (account, no profile)",
 };
 
-/** Returns true when the account matches the chosen account status. */
-export function matchesAccountStatus(account: IEditorAccount, status: AccountStatusFilter): boolean {
-    switch (status) {
-        case "not-linked":
-            return account.hasProfile && !account.hasAccount;
-        case "no-profile":
-            return account.hasAccount && !account.hasProfile;
-        default:
-            return true;
-    }
+/** What the editor list is filtered by, and which page of it to show. An empty string or "all" means that filter is not used. */
+export interface IEditorAccountFilter extends IPageRequest {
+    /** Words to find in the name, preferred name, email or position. */
+    search: string;
+    status: AccountStatusFilter;
+    /** ISO date (e.g. 2026-09-14): only people who started on or after it. */
+    startedFrom: string;
+}
+
+/** Results per page on the editor list until the person picks another size. */
+export const EDITOR_ACCOUNT_PAGE_SIZE = 10;
+
+export const EMPTY_EDITOR_ACCOUNT_FILTER: IEditorAccountFilter = {
+    search: "",
+    status: "all",
+    startedFrom: "",
+    page: 1,
+    pageSize: EDITOR_ACCOUNT_PAGE_SIZE,
+};
+
+/** The editor list filter in the page address. An unknown account status shows everyone. */
+export function editorAccountFilterFromParams(params: SearchParams): IEditorAccountFilter {
+    return {
+        search: ClientUtils.firstSearchParam(params.search),
+        status: ClientUtils.oneOf(
+            ClientUtils.firstSearchParam(params.status),
+            Object.keys(accountStatusLabels) as AccountStatusFilter[],
+            "all",
+        ),
+        startedFrom: ClientUtils.firstSearchParam(params.startedFrom),
+        page: ClientUtils.pageNumberFrom(ClientUtils.firstSearchParam(params.page)),
+        pageSize: ClientUtils.pageSizeFrom(ClientUtils.firstSearchParam(params.pageSize), EDITOR_ACCOUNT_PAGE_SIZE),
+    };
+}
+
+/** Address of the editor list filtered by these values. Unused filters are left out of the address. */
+export function editorAccountListPath(filter: IEditorAccountFilter): string {
+    return ClientUtils.pathWithParams("/editor", filter, EMPTY_EDITOR_ACCOUNT_FILTER);
 }

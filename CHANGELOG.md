@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-19 - server-side-filtering
+
+### Added
+- Pagination on the employee, editor and admin lists: a "Showing 1–20 of 87" summary, page buttons and a per-page choice of 10, 20, 50 or 100 (`ClientUtils.pageSizes`). The employee list shows 20 per page by default; the editor and admin lists show 10. The database returns one page at a time, a page past the end shows the last page, and changing a filter or the page size goes back to page 1.
+- One shared `Pagination` component (DaisyUI `join`) and a `useServerFilter` hook (`src/components/ServerFilter.ts`) used by all three lists.
+- `src/utils/ClientUtils.ts` (helpers safe in the browser and on the server: dates, strings, ids, URL parameters, paging, photo cropping) and `src/utils/ServerUtils.ts` (`server-only`: tokens, Prisma errors, search helpers).
+
+### Changed
+- Search and filters on the employee, editor and admin lists run in the database instead of the browser. The filter and page are kept in the page address (e.g. `/?search=sample&page=2`), so a filtered list can be bookmarked, shared or reloaded.
+- Search matches each word on its own and ignores case, so "sample one" finds a first name "Sample" with a last name "One". Preferred name is now searchable on the employee and editor lists.
+- The new starter carousel follows the employee list search and start date, so it only shows people who also match the list.
+- The editor list's Delete button deletes the profile on the server and reloads the list (it previously only removed the row on the page).
+- Helpers spread across components, models and services (date, crop, token, UUID and Prisma helpers, including three duplicates) moved into `ClientUtils` and `ServerUtils`. `DateUtils.ts`, `CropImage.ts` and `InviteToken.ts` were removed.
+
+### Fixed
+- A search for `%` or `_` matched every row, because Prisma passes these SQL wildcards through; they are now escaped (`ServerUtils.escapeLikePattern`).
+- Removed `file.ts` from the repository root, so `next build` type-checks cleanly again.
+
 ## [0.7.0] - 2026-10-13 - image-upload
 
 ### Added
