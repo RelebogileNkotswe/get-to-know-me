@@ -4,12 +4,12 @@ import NoProfileNotice from "../components/NoProfileNotice";
 import { requireUser } from "../logic/auth/RequireUser";
 import { profileService } from "../logic/profiles/ProfileService";
 import { employeeFilterFromParams, type IEmployeeFilter } from "../models/Employee";
-import { hasRoleAtLeast } from "../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
     const user = await requireUser();
     const filter: IEmployeeFilter = employeeFilterFromParams(await searchParams);
-    const canReview: boolean = hasRoleAtLeast(user.role, "editor");
+    const canReview: boolean = hasRoleAtLeast(user.role, UserRole.Editor);
     const [employees, newStarters, ownStatus, awaitingReview] = await Promise.all([
         profileService.listPublishedEmployees(filter),
         profileService.listNewStarters(filter),

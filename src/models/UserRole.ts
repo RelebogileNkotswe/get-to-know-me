@@ -1,10 +1,14 @@
-/** Roles a signed-in user can hold, from least to most privileged. */
-export type UserRole = "viewer" | "editor" | "admin";
+/** Roles a signed-in user can hold, from least to most privileged. The values match the database's `UserRole` enum. */
+export enum UserRole {
+    Viewer = "viewer",
+    Editor = "editor",
+    Admin = "admin",
+}
 
 const roleRanks: Record<UserRole, number> = {
-    viewer: 0,
-    editor: 1,
-    admin: 2,
+    [UserRole.Viewer]: 0,
+    [UserRole.Editor]: 1,
+    [UserRole.Admin]: 2,
 };
 
 /**

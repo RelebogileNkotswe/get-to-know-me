@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { changeRoleAction, unlockUserAction } from "../app/admin/actions";
 import type { UserActionResult } from "../interface/users/UserService";
 import {
-    EMPTY_USER_ACCOUNT_FILTER,
+    emptyUserAccountFilter,
     roleLabels,
     userAccountListPath,
     type IUserAccount,
@@ -13,7 +13,7 @@ import {
     type RoleFilter,
 } from "../models/UserAccount";
 import type { IPage } from "../models/Paging";
-import type { UserRole } from "../models/UserRole";
+import { UserRole } from "../models/UserRole";
 import ActionNotice from "./ActionNotice";
 import AdminToolbar from "./AdminToolbar";
 import ConfirmDialog from "./ConfirmDialog";
@@ -36,7 +36,7 @@ interface IPendingRoleChange {
     role: UserRole;
 }
 
-const ROLES: UserRole[] = ["viewer", "editor", "admin"];
+const ROLES: UserRole[] = Object.values(UserRole);
 
 /**
  * Admin page body: the toolbar plus a table of users where an admin can change roles and unlock locked accounts.
@@ -47,7 +47,7 @@ export default function AdminUsersView({ users, filter, currentUserId }: IAdminU
     const { inputs, isLoading, typeText, choose, clear }: IServerFilter<IUserAccountFilter> = useServerFilter(
         filter,
         userAccountListPath,
-        EMPTY_USER_ACCOUNT_FILTER,
+        emptyUserAccountFilter,
     );
     const [pending, setPending] = useState<IPendingRoleChange | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
@@ -206,7 +206,7 @@ export default function AdminUsersView({ users, filter, currentUserId }: IAdminU
                 <ConfirmDialog
                     title="Change role?"
                     message={`${pending.user.name} will become ${roleLabels[pending.role].toLowerCase()}${
-                        pending.role === "admin" ? " and will be able to manage users and roles" : ""
+                        pending.role === UserRole.Admin ? " and will be able to manage users and roles" : ""
                     }.`}
                     confirmLabel="Change role"
                     onConfirm={confirmRoleChange}

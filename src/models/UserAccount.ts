@@ -1,6 +1,6 @@
 import { ClientUtils, type SearchParams } from "../utils/ClientUtils";
 import type { IPageRequest } from "./Paging";
-import type { UserRole } from "./UserRole";
+import { UserRole } from "./UserRole";
 
 /** A user account as managed by admins. */
 export interface IUserAccount {
@@ -22,9 +22,9 @@ export type LockStatusFilter = "all" | "active" | "locked";
 /** Text shown for each role choice. */
 export const roleFilterLabels: Record<RoleFilter, string> = {
     all: "All roles",
-    viewer: "Viewers",
-    editor: "Editors",
-    admin: "Admins",
+    [UserRole.Viewer]: "Viewers",
+    [UserRole.Editor]: "Editors",
+    [UserRole.Admin]: "Admins",
 };
 
 /** Text shown for each lock status choice. */
@@ -47,7 +47,7 @@ export interface IUserAccountFilter extends IPageRequest {
 /** Results per page on the admin user list until the person picks another size. */
 export const USER_ACCOUNT_PAGE_SIZE = 10;
 
-export const EMPTY_USER_ACCOUNT_FILTER: IUserAccountFilter = {
+export const emptyUserAccountFilter: IUserAccountFilter = {
     search: "",
     role: "all",
     lockStatus: "all",
@@ -78,12 +78,12 @@ export function userAccountFilterFromParams(params: SearchParams): IUserAccountF
 
 /** Address of the admin user list filtered by these values. Unused filters are left out of the address. */
 export function userAccountListPath(filter: IUserAccountFilter): string {
-    return ClientUtils.pathWithParams("/admin", filter, EMPTY_USER_ACCOUNT_FILTER);
+    return ClientUtils.pathWithParams("/admin", filter, emptyUserAccountFilter);
 }
 
 /** Text shown for a single user's role. */
 export const roleLabels: Record<UserRole, string> = {
-    viewer: "Viewer",
-    editor: "Editor",
-    admin: "Admin",
+    [UserRole.Viewer]: "Viewer",
+    [UserRole.Editor]: "Editor",
+    [UserRole.Admin]: "Admin",
 };

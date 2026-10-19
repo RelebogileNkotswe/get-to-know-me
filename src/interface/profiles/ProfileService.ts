@@ -1,3 +1,4 @@
+import type { AuditActor } from "../../models/Audit";
 import type { IEditorAccount, IEditorAccountFilter } from "../../models/EditorAccount";
 import type { IEmployee, IEmployeeFilter } from "../../models/Employee";
 import type { IPage } from "../../models/Paging";
@@ -62,23 +63,32 @@ export interface IProfileService {
     listNewStarters(filter: IEmployeeFilter): Promise<IEmployee[]>;
 
     /**
-     * Validates and saves a new profile, published straight away. Fails with an error on the field when the
-     * values are invalid or the company email already has a profile.
+     * Validates and saves a new profile, published straight away, and records it in the audit log. Fails with an error
+     * on the field when the values are invalid or the company email already has a profile.
      */
-    createProfile(values: IProfileFormValues): Promise<SaveProfileResult>;
+    createProfile(values: IProfileFormValues, actor: AuditActor): Promise<SaveProfileResult>;
 
-    /** Validates and saves changes to a profile. Fails with the same errors as `createProfile`, or an error on the email when the profile no longer exists. */
-    updateProfile(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult>;
+    /**
+     * Validates and saves changes to a profile, recording the names of the changed fields in the audit log. Fails with
+     * the same errors as `createProfile`, or an error on the email when the profile no longer exists.
+     */
+    updateProfile(profileId: string, values: IProfileFormValues, actor: AuditActor): Promise<SaveProfileResult>;
 
     /** Returns where the profile is in its life (invited, awaiting review or published), or null when it does not exist. */
     getProfileStatus(profileId: string): Promise<ProfileStatus | null>;
 
-    /** Publishes a profile the employee has submitted, so it shows in the employee list. Returns false when it was not awaiting review. */
-    publishProfile(profileId: string): Promise<boolean>;
+    /**
+     * Publishes a profile the employee has submitted, so it shows in the employee list, and records it in the audit log.
+     * Returns false when it was not awaiting review.
+     */
+    publishProfile(profileId: string, actor: AuditActor): Promise<boolean>;
 
     /** How many submitted profiles are waiting for an editor or admin to review them. */
     countAwaitingReview(): Promise<number>;
 
-    /** Deletes the profile. Returns false when no profile has this id. The linked user account is kept. */
-    deleteProfile(profileId: string): Promise<boolean>;
+    /**
+     * Deletes the profile and records it in the audit log. Returns false when no profile has this id. The linked user
+     * account is kept.
+     */
+    deleteProfile(profileId: string, actor: AuditActor): Promise<boolean>;
 }

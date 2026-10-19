@@ -1,3 +1,4 @@
+import type { AuditActor } from "../../models/Audit";
 import type { IPendingInvite } from "../../models/Invite";
 import type { IProfileFormValues, ProfileFormErrors } from "../../models/ProfileForm";
 
@@ -11,6 +12,12 @@ export type InviteLookup =
     | { state: "expired" }
     | { state: "invalid" };
 
+/** An invite whose link still works: the profile it fills in and that profile's company email. */
+export interface IOpenInvite {
+    profileId: string;
+    companyEmail: string;
+}
+
 /** Outcome of a new joiner submitting their form. `linkProblem` is set when the link itself no longer works. */
 export type SubmitInviteResult = { ok: true } | { ok: false; errors: ProfileFormErrors; linkProblem: string | null };
 
@@ -22,15 +29,22 @@ export type SubmitInviteResult = { ok: true } | { ok: false; errors: ProfileForm
 export interface IInviteService {
     /**
      * Creates a profile in the "invited" state, pre-filled with what the editor already knows, and a private link
-     * for it. The email is entered by the editor because it links the profile to the person's account.
+     * for it, and records it in the audit log. The email is entered by the editor because it links the profile to the
+     * person's account.
      */
-    createInvite(values: IProfileFormValues): Promise<CreateInviteResult>;
+    createInvite(values: IProfileFormValues, actor: AuditActor): Promise<CreateInviteResult>;
 
-    /** Replaces the link of an invite that has not been submitted, so the old link stops working. Returns the new token, or null. */
-    renewLink(profileId: string): Promise<string | null>;
+    /**
+     * Replaces the link of an invite that has not been submitted, so the old link stops working, and records it in the
+     * audit log. Returns the new token, or null.
+     */
+    renewLink(profileId: string, actor: AuditActor): Promise<string | null>;
 
-    /** Cancels an invite that has not been submitted, deleting its empty profile. Returns false when there was nothing to cancel. */
-    cancelInvite(profileId: string): Promise<boolean>;
+    /**
+     * Cancels an invite that has not been submitted, deleting its empty profile, and records it in the audit log.
+     * Returns false when there was nothing to cancel.
+     */
+    cancelInvite(profileId: string, actor: AuditActor): Promise<boolean>;
 
     /** Lists profiles that are invited or awaiting review, newest first. */
     listPendingInvites(): Promise<IPendingInvite[]>;
@@ -38,12 +52,12 @@ export interface IInviteService {
     /** Looks up an invite by the token in its link. Never reveals anything about a link that is not valid. */
     getInvite(token: string): Promise<InviteLookup>;
 
-    /** Returns the id of the profile an open invite belongs to, so the new joiner can add a photo to it; null when the link does not work. */
-    findOpenInviteProfileId(token: string): Promise<string | null>;
+    /** Returns the profile an open invite belongs to, so the new joiner can add a photo to it; null when the link does not work. */
+    findOpenInvite(token: string): Promise<IOpenInvite | null>;
 
     /**
-     * Saves the new joiner's answers and moves the profile to "awaiting review". The email stays as the editor entered it,
-     * whatever the browser sends. After this the link no longer works.
+     * Saves the new joiner's answers, moves the profile to "awaiting review" and records it in the audit log. The email
+     * stays as the editor entered it, whatever the browser sends. After this the link no longer works.
      */
     submitInvite(token: string, values: IProfileFormValues): Promise<SubmitInviteResult>;
 }

@@ -2,15 +2,19 @@ import "server-only";
 import type {
     CreateInviteResult,
     IInviteService,
+    IOpenInvite,
     InviteLookup,
     SubmitInviteResult,
 } from "../../interface/invites/InviteService";
+import { AuditAction, AuditActorType, type AuditActor } from "../../models/Audit";
 import { INVITE_VALID_DAYS, type IPendingInvite } from "../../models/Invite";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
+import { ProfileStatus } from "../../models/ProfileStatus";
 import { db } from "../../prisma/Database";
-import type { Invite, Profile } from "../../prisma/generated/client";
+import type { Invite, Prisma, Profile } from "../../prisma/generated/client";
 import { ClientUtils } from "../../utils/ClientUtils";
 import { ServerUtils } from "../../utils/ServerUtils";
+import { recordAuditEvent } from "../audit/AuditRecorder";
 import { toDatabaseData } from "../profiles/ProfileMapping";
 
 const LINK_NO_LONGER_WORKS = "This link no longer works.";
@@ -52,7 +56,7 @@ async function findUsableInvite(
     if (!invite) {
         return { state: "invalid" };
     }
-    if (invite.submittedAt !== null || invite.profile.status !== "invited") {
+    if (invite.submittedAt !== null || invite.profile.status !== ProfileStatus.Invited) {
         return { state: "submitted" };
     }
     if (invite.expiresAt <= new Date()) {
@@ -62,21 +66,29 @@ async function findUsableInvite(
 }
 
 export const inviteService: IInviteService = {
-    async createInvite(values: IProfileFormValues): Promise<CreateInviteResult> {
+    async createInvite(values: IProfileFormValues, actor: AuditActor): Promise<CreateInviteResult> {
         const errors = validateProfileForm(values);
         if (Object.keys(errors).length > 0) {
             return { ok: false, errors };
         }
         const token: string = ServerUtils.generateToken();
         try {
-            const profile = await db.profile.create({
-                data: {
-                    ...toDatabaseData(values),
-                    status: "invited",
-                    invite: { create: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() } },
-                },
+            return await db.$transaction(async (tx: Prisma.TransactionClient): Promise<CreateInviteResult> => {
+                const profile = await tx.profile.create({
+                    data: {
+                        ...toDatabaseData(values),
+                        status: ProfileStatus.Invited,
+                        invite: { create: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() } },
+                    },
+                });
+                await recordAuditEvent(tx, {
+                    action: AuditAction.InviteCreated,
+                    actor,
+                    targetId: profile.id,
+                    targetEmail: profile.companyEmail,
+                });
+                return { ok: true, profileId: profile.id, token };
             });
-            return { ok: true, profileId: profile.id, token };
         } catch (error) {
             if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile or an invite." } };
@@ -85,31 +97,62 @@ export const inviteService: IInviteService = {
         }
     },
 
-    async renewLink(profileId: string): Promise<string | null> {
+    async renewLink(profileId: string, actor: AuditActor): Promise<string | null> {
         if (!ClientUtils.isUuid(profileId)) {
             return null;
         }
         const token: string = ServerUtils.generateToken();
-        // Only an invite that has not been submitted can be renewed; the old token stops working at once.
-        const result = await db.invite.updateMany({
-            where: { profileId, submittedAt: null, profile: { status: "invited" } },
-            data: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() },
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<string | null> => {
+            // Only an invite that has not been submitted can be renewed; the old token stops working at once.
+            const result = await tx.invite.updateMany({
+                where: { profileId, submittedAt: null, profile: { status: ProfileStatus.Invited } },
+                data: { tokenHash: ServerUtils.hashToken(token), expiresAt: newExpiry() },
+            });
+            if (result.count === 0) {
+                return null;
+            }
+            const profile = await tx.profile.findUniqueOrThrow({
+                where: { id: profileId },
+                select: { companyEmail: true },
+            });
+            await recordAuditEvent(tx, {
+                action: AuditAction.InviteRenewed,
+                actor,
+                targetId: profileId,
+                targetEmail: profile.companyEmail,
+            });
+            return token;
         });
-        return result.count > 0 ? token : null;
     },
 
-    async cancelInvite(profileId: string): Promise<boolean> {
+    async cancelInvite(profileId: string, actor: AuditActor): Promise<boolean> {
         if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
-        // Only a profile still in the "invited" state is removed; a submitted one has the employee's answers and is reviewed instead.
-        const result = await db.profile.deleteMany({ where: { id: profileId, status: "invited" } });
-        return result.count > 0;
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<boolean> => {
+            // The email is read first, because the record needs it after the profile is gone.
+            const profile = await tx.profile.findUnique({ where: { id: profileId }, select: { companyEmail: true } });
+            if (!profile) {
+                return false;
+            }
+            // Only a profile still in the "invited" state is removed; a submitted one has the employee's answers and is reviewed instead.
+            const result = await tx.profile.deleteMany({ where: { id: profileId, status: ProfileStatus.Invited } });
+            if (result.count === 0) {
+                return false;
+            }
+            await recordAuditEvent(tx, {
+                action: AuditAction.InviteCancelled,
+                actor,
+                targetId: profileId,
+                targetEmail: profile.companyEmail,
+            });
+            return true;
+        });
     },
 
     async listPendingInvites(): Promise<IPendingInvite[]> {
         const profiles = await db.profile.findMany({
-            where: { status: { in: ["invited", "awaiting_review"] } },
+            where: { status: { in: [ProfileStatus.Invited, ProfileStatus.AwaitingReview] } },
             include: { invite: true },
             orderBy: { createdAt: "desc" },
         });
@@ -119,9 +162,11 @@ export const inviteService: IInviteService = {
             name: fullName(profile),
             email: profile.companyEmail,
             position: profile.position,
-            status: profile.status === "awaiting_review" ? "awaiting_review" : "invited",
+            status:
+                profile.status === ProfileStatus.AwaitingReview ? ProfileStatus.AwaitingReview : ProfileStatus.Invited,
             expiresOn: profile.invite ? ClientUtils.toUtcIsoDate(profile.invite.expiresAt) : "",
-            isExpired: profile.status === "invited" && profile.invite !== null && profile.invite.expiresAt <= now,
+            isExpired:
+                profile.status === ProfileStatus.Invited && profile.invite !== null && profile.invite.expiresAt <= now,
             submittedOn: profile.invite?.submittedAt ? ClientUtils.toUtcIsoDate(profile.invite.submittedAt) : null,
         }));
     },
@@ -131,9 +176,11 @@ export const inviteService: IInviteService = {
         return found.state === "open" ? { state: "open", values: toFormValues(found.profile) } : { state: found.state };
     },
 
-    async findOpenInviteProfileId(token: string): Promise<string | null> {
+    async findOpenInvite(token: string): Promise<IOpenInvite | null> {
         const found = await findUsableInvite(token);
-        return found.state === "open" ? found.profile.id : null;
+        return found.state === "open"
+            ? { profileId: found.profile.id, companyEmail: found.profile.companyEmail }
+            : null;
     },
 
     async submitInvite(token: string, values: IProfileFormValues): Promise<SubmitInviteResult> {
@@ -149,7 +196,7 @@ export const inviteService: IInviteService = {
             return { ok: false, errors, linkProblem: null };
         }
 
-        const saved: boolean = await db.$transaction(async (tx) => {
+        const saved: boolean = await db.$transaction(async (tx: Prisma.TransactionClient): Promise<boolean> => {
             // Marks the invite used first, so two submissions at once cannot both go through.
             const used = await tx.invite.updateMany({
                 where: { id: found.invite.id, submittedAt: null },
@@ -160,7 +207,13 @@ export const inviteService: IInviteService = {
             }
             await tx.profile.update({
                 where: { id: found.profile.id },
-                data: { ...toDatabaseData(submitted), status: "awaiting_review" },
+                data: { ...toDatabaseData(submitted), status: ProfileStatus.AwaitingReview },
+            });
+            await recordAuditEvent(tx, {
+                action: AuditAction.InviteSubmitted,
+                actor: { type: AuditActorType.Invitee, email: found.profile.companyEmail },
+                targetId: found.profile.id,
+                targetEmail: found.profile.companyEmail,
             });
             return true;
         });

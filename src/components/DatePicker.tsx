@@ -1,11 +1,9 @@
 "use client";
 
+import { useId } from "react";
 import { DayPicker } from "react-day-picker";
 import { ClientUtils } from "../utils/ClientUtils";
 import Icon from "./Icon";
-
-const POPOVER_ID = "date-picker-popover";
-const ANCHOR_NAME = "--date-picker";
 
 interface IDatePickerProps {
     /** Text shown on the picker button and used to name the clear button, e.g. "Started on or after". */
@@ -21,11 +19,15 @@ interface IDatePickerProps {
  * Date picker: a DaisyUI input-styled button that opens a React Day Picker calendar in a popover.
  */
 export default function DatePicker({ label, valueOnly = false, value, onChange }: IDatePickerProps) {
+    // Each picker gets its own popover id and CSS anchor name, so several pickers can share a page.
+    const id: string = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+    const popoverId: string = `date-picker-popover-${id}`;
+    const anchorName: string = `--date-picker-${id}`;
     const selectedDate: Date | undefined = ClientUtils.fromIsoDate(value);
 
     function handleSelect(date: Date | undefined): void {
         onChange(date ? ClientUtils.toIsoDate(date) : "");
-        document.getElementById(POPOVER_ID)?.hidePopover();
+        document.getElementById(popoverId)?.hidePopover();
     }
 
     function handleClear(): void {
@@ -34,8 +36,8 @@ export default function DatePicker({ label, valueOnly = false, value, onChange }
 
     return (
         <>
-            <div className="join" style={{ anchorName: ANCHOR_NAME }}>
-                <button type="button" className="input join-item" popoverTarget={POPOVER_ID} aria-label={label}>
+            <div className="join" style={{ anchorName }}>
+                <button type="button" className="input join-item" popoverTarget={popoverId} aria-label={label}>
                     <Icon name="calendar_month" />
                     {selectedDate ? (valueOnly ? value : `${label} ${value}`) : label}
                 </button>
@@ -47,9 +49,9 @@ export default function DatePicker({ label, valueOnly = false, value, onChange }
             </div>
             <div
                 popover="auto"
-                id={POPOVER_ID}
+                id={popoverId}
                 className="dropdown bg-base-100 rounded-box shadow-lg"
-                style={{ positionAnchor: ANCHOR_NAME }}
+                style={{ positionAnchor: anchorName }}
             >
                 <DayPicker className="react-day-picker" mode="single" selected={selectedDate} onSelect={handleSelect} />
             </div>

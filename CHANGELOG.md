@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-19 - auditing
+
+### Added
+- Audit log: a record of who did what to which account or profile, and when. It covers role changes, unlocks, accounts locked after five wrong passwords, profiles created, edited (the names of the changed fields, never their values), published and deleted, photos saved, and invites created, renewed, cancelled and submitted. New `audit_events` table (migration `20261019091110_add_audit_events`); the app only ever adds rows.
+- Each event is saved in the same database transaction as the change it records, so a change is never saved without its record, and a failed change leaves no record.
+- The actor of each event is a signed-in user, a new joiner using their private invite link, or the system (automatic lockouts). Emails are copied into the record, so it stays readable after the user or profile is deleted.
+- Audit log page for admins (`/admin/audit`, "Audit log" in the side menu): search by email, filter by action and date range (South African time), 10 per page by default, newest first, with short summaries such as "Viewer → Editor" or "Changed: Position".
+- `ClientUtils.companyTimeZone`, `startOfCompanyDay` and `formatDateTime`.
+
+### Changed
+- `UserRole`, `ProfileStatus`, `AuditAction` and `AuditActorType` are TypeScript enums with the same values as the database (e.g. `UserRole.Editor = "editor"`), and code uses the enum members instead of string literals.
+- Services that change data take the actor as a parameter (`AuditActor`), and server actions pass the signed-in user (`currentUserWithRole` replaces `currentUserHasRole`). `findOpenInviteProfileId` became `findOpenInvite`, which also returns the invitee's email.
+- Role changes run the last-admin check, the update and the audit record in one transaction.
+- `DatePicker` gives each instance its own popover, so several can share a page.
+- Empty filter constants renamed to camelCase (`emptyEmployeeFilter`, `emptyEditorAccountFilter`, `emptyUserAccountFilter`), matching `emptyProfileForm`.
+
+### Known gaps
+- No retention period for audit events yet (to agree with the data owner); rows are never deleted.
+- Sign-ins, sign-outs and password changes are not recorded.
+
 ## [0.8.0] - 2026-10-19 - server-side-filtering
 
 ### Added

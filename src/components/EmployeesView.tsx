@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-    EMPTY_EMPLOYEE_FILTER,
+    emptyEmployeeFilter,
     employeeListPath,
     type EmployeeView,
     type IEmployee,
     type IEmployeeFilter,
 } from "../models/Employee";
 import type { IPage } from "../models/Paging";
-import { hasRoleAtLeast } from "../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 import { useCurrentRole } from "./CurrentUserProvider";
 import EmployeeCard from "./EmployeeCard";
 import EmployeeCarousel from "./EmployeeCarousel";
@@ -37,10 +37,10 @@ export default function EmployeesView({ employees, newStarters, filter }: IEmplo
     const { inputs, isLoading, typeText, choose, clear }: IServerFilter<IEmployeeFilter> = useServerFilter(
         filter,
         employeeListPath,
-        EMPTY_EMPLOYEE_FILTER,
+        emptyEmployeeFilter,
     );
     const [view, setView] = useState<EmployeeView>("card");
-    const showLinkStatus: boolean = hasRoleAtLeast(useCurrentRole(), "editor");
+    const showLinkStatus: boolean = hasRoleAtLeast(useCurrentRole(), UserRole.Editor);
     const items: IEmployee[] = employees.items;
 
     return (

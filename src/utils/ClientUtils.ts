@@ -111,6 +111,26 @@ export class ClientUtils {
         return new Date(`${isoDate}T00:00:00Z`);
     }
 
+    /** The company's time zone, used to show times and to read the days in date filters. */
+    static readonly companyTimeZone: string = "Africa/Johannesburg";
+
+    /** South Africa keeps UTC+02:00 all year, so the company's days always start at this offset. */
+    private static readonly companyUtcOffset: string = "+02:00";
+
+    /** The moment an ISO date (e.g. 2026-09-14) starts in the company's time zone. */
+    static startOfCompanyDay(isoDate: string): Date {
+        return new Date(`${isoDate}T00:00:00${ClientUtils.companyUtcOffset}`);
+    }
+
+    /** A moment shown as a date and time in the company's time zone, e.g. "19 Oct 2026, 14:05". */
+    static formatDateTime(isoTimestamp: string): string {
+        return new Date(isoTimestamp).toLocaleString("en-ZA", {
+            dateStyle: "medium",
+            timeStyle: "short",
+            timeZone: ClientUtils.companyTimeZone,
+        });
+    }
+
     /** True when the value is a real calendar date written as YYYY-MM-DD. */
     static isIsoDate(value: string): boolean {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {

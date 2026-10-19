@@ -5,17 +5,19 @@ import type {
     IProfileService,
     SaveProfileResult,
 } from "../../interface/profiles/ProfileService";
+import { AuditAction, type AuditActor } from "../../models/Audit";
 import type { IEditorAccount, IEditorAccountFilter } from "../../models/EditorAccount";
 import { newStarterDates, type IEmployee, type IEmployeeFilter, type INewStarterDates } from "../../models/Employee";
 import { validateProfileForm, type IProfileFormValues } from "../../models/ProfileForm";
 import { photoUrl } from "../../models/Photo";
 import type { IPage } from "../../models/Paging";
-import type { ProfileStatus } from "../../models/ProfileStatus";
+import { ProfileStatus } from "../../models/ProfileStatus";
 import { db } from "../../prisma/Database";
 import type { Prisma, Profile } from "../../prisma/generated/client";
 import { ClientUtils } from "../../utils/ClientUtils";
 import { ServerUtils } from "../../utils/ServerUtils";
-import { toDatabaseData } from "./ProfileMapping";
+import { recordAuditEvent } from "../audit/AuditRecorder";
+import { changedProfileFields, toDatabaseData, type ProfileDatabaseData } from "./ProfileMapping";
 
 /**
  * One condition per search word for the employee list: the word must appear, in any case, in the name, preferred name,
@@ -42,7 +44,10 @@ function employeeSearchConditions(search: string): Prisma.ProfileWhereInput[] {
 
 /** Published profiles that match the employee list filter; a start date that is not a valid ISO date is ignored. */
 function publishedEmployeeConditions(filter: IEmployeeFilter): Prisma.ProfileWhereInput {
-    const where: Prisma.ProfileWhereInput = { status: "published", AND: employeeSearchConditions(filter.search) };
+    const where: Prisma.ProfileWhereInput = {
+        status: ProfileStatus.Published,
+        AND: employeeSearchConditions(filter.search),
+    };
     if (ClientUtils.isIsoDate(filter.startedFrom)) {
         where.startDate = { gte: ClientUtils.fromUtcIsoDate(filter.startedFrom) };
     }
@@ -161,7 +166,7 @@ export const profileService: IProfileService = {
 
     async getPublishedProfile(profileId: string): Promise<IProfileFormValues | null> {
         const profile = await findProfile(profileId);
-        return profile && profile.status === "published" ? toFormValues(profile) : null;
+        return profile && profile.status === ProfileStatus.Published ? toFormValues(profile) : null;
     },
 
     async getAccountStatus(profileId: string): Promise<IAccountStatus> {
@@ -241,7 +246,7 @@ export const profileService: IProfileService = {
                 hasProfile: true,
                 hasAccount: linkedEmails.has(profile.companyEmail),
                 profileRequested: false,
-                profileStatus: profile.status,
+                profileStatus: profile.status as ProfileStatus,
             });
         }
         for (const user of users) {
@@ -284,17 +289,25 @@ export const profileService: IProfileService = {
         });
     },
 
-    async createProfile(values: IProfileFormValues): Promise<SaveProfileResult> {
+    async createProfile(values: IProfileFormValues, actor: AuditActor): Promise<SaveProfileResult> {
         // Validated here as well as in the form: the form check can be bypassed.
         const errors = validateProfileForm(values);
         if (Object.keys(errors).length > 0) {
             return { ok: false, errors };
         }
         try {
-            const profile = await db.profile.create({
-                data: { ...toDatabaseData(values), status: "published", publishedAt: new Date() },
+            return await db.$transaction(async (tx: Prisma.TransactionClient): Promise<SaveProfileResult> => {
+                const profile = await tx.profile.create({
+                    data: { ...toDatabaseData(values), status: ProfileStatus.Published, publishedAt: new Date() },
+                });
+                await recordAuditEvent(tx, {
+                    action: AuditAction.ProfileCreated,
+                    actor,
+                    targetId: profile.id,
+                    targetEmail: profile.companyEmail,
+                });
+                return { ok: true, profileId: profile.id };
             });
-            return { ok: true, profileId: profile.id };
         } catch (error) {
             if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile." } };
@@ -303,7 +316,7 @@ export const profileService: IProfileService = {
         }
     },
 
-    async updateProfile(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult> {
+    async updateProfile(profileId: string, values: IProfileFormValues, actor: AuditActor): Promise<SaveProfileResult> {
         const errors = validateProfileForm(values);
         if (Object.keys(errors).length > 0) {
             return { ok: false, errors };
@@ -312,8 +325,26 @@ export const profileService: IProfileService = {
             return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
         }
         try {
-            const profile = await db.profile.update({ where: { id: profileId }, data: toDatabaseData(values) });
-            return { ok: true, profileId: profile.id };
+            return await db.$transaction(async (tx: Prisma.TransactionClient): Promise<SaveProfileResult> => {
+                const existing = await tx.profile.findUnique({ where: { id: profileId } });
+                if (!existing) {
+                    return { ok: false, errors: { companyEmail: "This profile no longer exists." } };
+                }
+                const data: ProfileDatabaseData = toDatabaseData(values);
+                const changedFields: string[] = changedProfileFields(existing, data);
+                const profile = await tx.profile.update({ where: { id: profileId }, data });
+                // Saving without changing anything is not worth a record.
+                if (changedFields.length > 0) {
+                    await recordAuditEvent(tx, {
+                        action: AuditAction.ProfileUpdated,
+                        actor,
+                        targetId: profile.id,
+                        targetEmail: profile.companyEmail,
+                        details: { fields: changedFields },
+                    });
+                }
+                return { ok: true, profileId: profile.id };
+            });
         } catch (error) {
             if (ServerUtils.hasPrismaCode(error, "P2002")) {
                 return { ok: false, errors: { companyEmail: "That email already has a profile." } };
@@ -327,30 +358,61 @@ export const profileService: IProfileService = {
 
     async getProfileStatus(profileId: string): Promise<ProfileStatus | null> {
         const profile = await findProfile(profileId);
-        return profile ? profile.status : null;
+        return profile ? (profile.status as ProfileStatus) : null;
     },
 
-    async publishProfile(profileId: string): Promise<boolean> {
+    async publishProfile(profileId: string, actor: AuditActor): Promise<boolean> {
         if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
-        // Only a profile the employee has submitted can be published; an invited one has nothing to review yet.
-        const result = await db.profile.updateMany({
-            where: { id: profileId, status: "awaiting_review" },
-            data: { status: "published", publishedAt: new Date() },
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<boolean> => {
+            // Only a profile the employee has submitted can be published; an invited one has nothing to review yet.
+            const result = await tx.profile.updateMany({
+                where: { id: profileId, status: ProfileStatus.AwaitingReview },
+                data: { status: ProfileStatus.Published, publishedAt: new Date() },
+            });
+            if (result.count === 0) {
+                return false;
+            }
+            const profile = await tx.profile.findUniqueOrThrow({
+                where: { id: profileId },
+                select: { companyEmail: true },
+            });
+            await recordAuditEvent(tx, {
+                action: AuditAction.ProfilePublished,
+                actor,
+                targetId: profileId,
+                targetEmail: profile.companyEmail,
+            });
+            return true;
         });
-        return result.count > 0;
     },
 
     async countAwaitingReview(): Promise<number> {
-        return db.profile.count({ where: { status: "awaiting_review" } });
+        return db.profile.count({ where: { status: ProfileStatus.AwaitingReview } });
     },
 
-    async deleteProfile(profileId: string): Promise<boolean> {
+    async deleteProfile(profileId: string, actor: AuditActor): Promise<boolean> {
         if (!ClientUtils.isUuid(profileId)) {
             return false;
         }
-        const result = await db.profile.deleteMany({ where: { id: profileId } });
-        return result.count > 0;
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<boolean> => {
+            // The email is read first, because the record needs it after the profile is gone.
+            const profile = await tx.profile.findUnique({ where: { id: profileId }, select: { companyEmail: true } });
+            if (!profile) {
+                return false;
+            }
+            const result = await tx.profile.deleteMany({ where: { id: profileId } });
+            if (result.count === 0) {
+                return false;
+            }
+            await recordAuditEvent(tx, {
+                action: AuditAction.ProfileDeleted,
+                actor,
+                targetId: profileId,
+                targetEmail: profile.companyEmail,
+            });
+            return true;
+        });
     },
 };

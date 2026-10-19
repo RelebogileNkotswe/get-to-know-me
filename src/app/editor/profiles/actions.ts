@@ -3,33 +3,30 @@
 import { revalidatePath } from "next/cache";
 import type { SavePhotoResult } from "../../../interface/photos/PhotoService";
 import type { SaveProfileResult } from "../../../interface/profiles/ProfileService";
-import { authService } from "../../../logic/auth/AuthService";
+import { currentUserWithRole } from "../../../logic/auth/RequireUser";
 import { photoService } from "../../../logic/photos/PhotoService";
 import { profileService } from "../../../logic/profiles/ProfileService";
+import { userActor } from "../../../models/Audit";
 import type { IProfileFormValues } from "../../../models/ProfileForm";
-import { hasRoleAtLeast } from "../../../models/UserRole";
+import { UserRole } from "../../../models/UserRole";
 
 const NOT_ALLOWED: SaveProfileResult = {
     ok: false,
     errors: { companyEmail: "You are not allowed to change profiles." },
 };
 
-// Server actions can be called directly with a POST request, so every action checks the signed-in user's role itself.
-async function canEditProfiles(): Promise<boolean> {
-    const user = await authService.getCurrentUser();
-    return user !== null && hasRoleAtLeast(user.role, "editor");
-}
-
 function refreshLists(): void {
     revalidatePath("/");
     revalidatePath("/editor");
 }
 
+// Server actions can be called directly with a POST request, so every action checks the signed-in user's role itself.
 export async function createProfileAction(values: IProfileFormValues): Promise<SaveProfileResult> {
-    if (!(await canEditProfiles())) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return NOT_ALLOWED;
     }
-    const result = await profileService.createProfile(values);
+    const result = await profileService.createProfile(values, userActor(editor));
     if (result.ok) {
         refreshLists();
     }
@@ -37,10 +34,11 @@ export async function createProfileAction(values: IProfileFormValues): Promise<S
 }
 
 export async function updateProfileAction(profileId: string, values: IProfileFormValues): Promise<SaveProfileResult> {
-    if (!(await canEditProfiles())) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return NOT_ALLOWED;
     }
-    const result = await profileService.updateProfile(profileId, values);
+    const result = await profileService.updateProfile(profileId, values, userActor(editor));
     if (result.ok) {
         refreshLists();
     }
@@ -49,14 +47,15 @@ export async function updateProfileAction(profileId: string, values: IProfileFor
 
 /** Saves or replaces a profile's photo. The image is checked and compressed on the server. */
 export async function uploadProfilePhotoAction(profileId: string, formData: FormData): Promise<SavePhotoResult> {
-    if (!(await canEditProfiles())) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return { ok: false, error: "You are not allowed to change profiles." };
     }
     const file: FormDataEntryValue | null = formData.get("photo");
     if (!(file instanceof File)) {
         return { ok: false, error: "Choose a photo first." };
     }
-    const result = await photoService.savePhoto(profileId, new Uint8Array(await file.arrayBuffer()));
+    const result = await photoService.savePhoto(profileId, new Uint8Array(await file.arrayBuffer()), userActor(editor));
     if (result.ok) {
         // The photo shows on cards, the carousel and the profile page, so every page is refreshed.
         revalidatePath("/", "layout");
@@ -66,10 +65,11 @@ export async function uploadProfilePhotoAction(profileId: string, formData: Form
 
 /** Publishes a profile the employee submitted, so it shows in the employee list. Returns true when it was published. */
 export async function publishProfileAction(profileId: string): Promise<boolean> {
-    if (!(await canEditProfiles())) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return false;
     }
-    const published = await profileService.publishProfile(profileId);
+    const published = await profileService.publishProfile(profileId, userActor(editor));
     if (published) {
         refreshLists();
         revalidatePath("/editor/invites");
@@ -79,10 +79,11 @@ export async function publishProfileAction(profileId: string): Promise<boolean> 
 
 /** Returns true when the profile was deleted. */
 export async function deleteProfileAction(profileId: string): Promise<boolean> {
-    if (!(await canEditProfiles())) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return false;
     }
-    const deleted = await profileService.deleteProfile(profileId);
+    const deleted = await profileService.deleteProfile(profileId, userActor(editor));
     if (deleted) {
         refreshLists();
     }
