@@ -41,11 +41,13 @@ export default function EmployeesView({ employees, newStarters, filter }: IEmplo
     );
     const [view, setView] = useState<EmployeeView>("card");
     const [statusFilter, setStatusFilter] = useState<"all" | "linked" | "pending">("all");
+
     const showLinkStatus: boolean = hasRoleAtLeast(useCurrentRole(), UserRole.Editor);
     const items: IEmployee[] = employees.items;
 
     const linkedCount = items.filter((e) => e.hasAccount).length;
     const pendingCount = items.filter((e) => !e.hasAccount).length;
+
 
     const visibleEmployees: IEmployee[] = items.filter((employee: IEmployee) =>
         statusFilter === "all" ||
@@ -67,6 +69,7 @@ export default function EmployeesView({ employees, newStarters, filter }: IEmplo
                 onStatusFilterChange={setStatusFilter}
             />
             <div className="p-6">
+
                 <EmployeeCarousel newStarters={newStarters} />
                 <div aria-busy={isLoading} className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
                     {/* Status filter chips — client-side filter on the current page */}
