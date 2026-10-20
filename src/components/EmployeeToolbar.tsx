@@ -7,6 +7,8 @@ interface IEmployeeToolbarProps {
     onSearchChange: (value: string) => void;
     startDate: string;
     onStartDateChange: (value: string) => void;
+    /** Clears the search and the start date together. */
+    onClear: () => void;
     view: EmployeeView;
     onViewChange: (view: EmployeeView) => void;
     statusFilter: "all" | "linked" | "pending";
@@ -21,18 +23,13 @@ export default function EmployeeToolbar({
     onSearchChange,
     startDate,
     onStartDateChange,
+    onClear,
     view,
     onViewChange,
     statusFilter,
     onStatusFilterChange,
 }: IEmployeeToolbarProps) {
     const hasFilters: boolean = search !== "" || startDate !== "" || statusFilter !== "all";
-
-    function clearFilters(): void {
-        onSearchChange("");
-        onStartDateChange("");
-        onStatusFilterChange("all");
-    }
 
     return (
         <section className="border-b border-white/8 flex flex-wrap items-center gap-3 px-6 py-4 bg-brand-navy">
@@ -48,7 +45,12 @@ export default function EmployeeToolbar({
                 />
             </label>
             <DatePicker label="Started on or after" value={startDate} onChange={onStartDateChange} />
-            <button type="button" className="flex items-center gap-1 text-sm text-outline hover:text-white transition-colors disabled:opacity-40" disabled={!hasFilters} onClick={clearFilters}>
+            <button
+                type="button"
+                className="flex items-center gap-1 text-sm text-outline hover:text-white transition-colors disabled:opacity-40"
+                disabled={!hasFilters}
+                onClick={() => { onClear(); onStatusFilterChange("all"); }}
+            >
                 <Icon name="filter_alt_off" />
                 Clear
             </button>

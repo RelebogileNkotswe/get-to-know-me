@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { UserRole } from "../models/UserRole";
+import { UserRole } from "../models/UserRole";
 
 /** What client components may know about the signed-in user: enough to shape the screen, nothing secret. */
 interface ICurrentUserInfo {
@@ -34,5 +34,5 @@ export function useCurrentUser(): ICurrentUserInfo | null {
 
 /** The signed-in user's role. Falls back to the lowest role (viewer) when nobody is signed in. */
 export function useCurrentRole(): UserRole {
-    return useCurrentUser()?.role ?? "viewer";
+    return useCurrentUser()?.role ?? UserRole.Viewer;
 }

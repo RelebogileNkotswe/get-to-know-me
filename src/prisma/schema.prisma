@@ -1,5 +1,5 @@
 // Get To Know Me database schema. Migrations live in /migrations.
-// Tables for email tokens and invites are added in their own phases (see IMPLEMENTATION-PLAN.md).
+// The table for email tokens is added in its own phase (see IMPLEMENTATION-PLAN.md).
 
 generator client {
   provider = "prisma-client"
@@ -113,6 +113,53 @@ model Invite {
   profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@map("invites")
+}
+
+/// What an audit event records. Account actions are done to a user; the rest are done to a profile.
+enum AuditAction {
+  role_changed
+  account_unlocked
+  account_locked
+  profile_created
+  profile_updated
+  profile_published
+  profile_deleted
+  photo_saved
+  invite_created
+  invite_renewed
+  invite_cancelled
+  invite_submitted
+}
+
+/// Who caused an audit event: a signed-in user, a new joiner using their private invite link, or the system itself.
+enum AuditActorType {
+  user
+  invitee
+  system
+}
+
+/// A record of who did what to which account or profile, and when. The app only ever adds rows. The table has no
+/// foreign keys and keeps copies of the emails, so a record stays readable after the user or profile it names is deleted.
+model AuditEvent {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  action      AuditAction
+  actorType   AuditActorType @map("actor_type")
+  /// The signed-in user who did it; null for a new joiner or the system.
+  actorUserId String?        @map("actor_user_id") @db.Uuid
+  /// The actor's email at the time; null for the system.
+  actorEmail  String?        @map("actor_email")
+  /// The user or profile the action was done to.
+  targetId    String         @map("target_id") @db.Uuid
+  /// The target's email at the time.
+  targetEmail String         @map("target_email")
+  /// Facts about the change, such as the old and new role or the names of the fields that changed. Never field values,
+  /// so the log does not become a second copy of personal information.
+  details     Json?
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@map("audit_events")
 }
 
 /// Settings that can change without a code change, such as the combined character limit.

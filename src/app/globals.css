@@ -1,6 +1,34 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Custom dark brand theme — maps daisyUI semantic tokens to the navy/green palette so all daisyUI
+   components (table, badge, btn, select, input, alert) are dark by default across every page. */
+@plugin "daisyui/theme" {
+    name: "brand";
+    default: true;
+    color-scheme: dark;
+    --color-base-100: oklch(15% 0.055 237);
+    --color-base-200: oklch(20% 0.06 237);
+    --color-base-300: oklch(24% 0.065 237);
+    --color-base-content: oklch(100% 0 0);
+    --color-primary: oklch(81% 0.175 162);
+    --color-primary-content: oklch(15% 0.055 237);
+    --color-secondary: oklch(24% 0.065 237);
+    --color-secondary-content: oklch(72% 0.04 220);
+    --color-accent: oklch(81% 0.175 162);
+    --color-accent-content: oklch(15% 0.055 237);
+    --color-neutral: oklch(28% 0.05 237);
+    --color-neutral-content: oklch(72% 0.04 220);
+    --color-info: oklch(72% 0.14 240);
+    --color-info-content: oklch(100% 0 0);
+    --color-success: oklch(81% 0.175 162);
+    --color-success-content: oklch(15% 0.055 237);
+    --color-warning: oklch(83% 0.18 85);
+    --color-warning-content: oklch(20% 0.06 85);
+    --color-error: oklch(65% 0.24 27);
+    --color-error-content: oklch(100% 0 0);
+}
+
 /* Brand colours from the Get To Know Me design: dark navy surfaces and a green accent. */
 @theme {
     --color-brand-navy: #0b1b30;
@@ -37,6 +65,21 @@
 
     /* Headline font alias */
     --font-headline: var(--font-geist-sans);
+}
+
+/* PDF export: one A5 sheet, no margins, colours kept even when the print dialog turns background graphics off. */
+@page profile-a5 {
+    size: A5 portrait;
+    margin: 0;
+}
+
+.a5-sheet {
+    page: profile-a5;
+    width: 148mm;
+    height: 210mm;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 
 /* New starter carousel: two identical groups of cards side by side, scrolled left by exactly one group, so it loops without a jump. */

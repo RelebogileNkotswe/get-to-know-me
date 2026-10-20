@@ -3,9 +3,10 @@ import EditProfileView from "../../../../../components/EditProfileView";
 import { requireUser } from "../../../../../logic/auth/RequireUser";
 import { photoService } from "../../../../../logic/photos/PhotoService";
 import { profileService } from "../../../../../logic/profiles/ProfileService";
+import { UserRole } from "../../../../../models/UserRole";
 
 export default async function EditProfilePage(props: PageProps<"/editor/profiles/[id]/edit">) {
-    await requireUser("editor");
+    await requireUser(UserRole.Editor);
     const { id } = await props.params;
     const [profile, status] = await Promise.all([profileService.getProfile(id), profileService.getProfileStatus(id)]);
     if (!profile || !status) {

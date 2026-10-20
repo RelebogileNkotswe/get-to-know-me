@@ -1,3 +1,5 @@
+import { ClientUtils } from "../utils/ClientUtils";
+
 /** Email domain that company emails must end with. */
 export const ALLOWED_EMAIL_DOMAIN = "@singular.co.za";
 
@@ -32,6 +34,20 @@ export interface IProfileFormValues {
     /** Section "Educational & professional background". */
     background: string;
 }
+
+/** Name shown for each form field, such as in the audit log's list of changed fields. */
+export const profileFieldLabels: Record<keyof IProfileFormValues, string> = {
+    firstName: "First name",
+    lastName: "Last name",
+    preferredName: "Preferred name",
+    position: "Position",
+    startDate: "Start date",
+    companyEmail: "Company email",
+    linkedIn: "LinkedIn",
+    hobbies: "Beyond the office gates",
+    somethingInteresting: "Beyond the bio",
+    background: "Background",
+};
 
 /** Error messages keyed by form field; a field without an entry is valid. */
 export type ProfileFormErrors = Partial<Record<keyof IProfileFormValues | "photo", string>>;
@@ -87,15 +103,6 @@ const SHORT_TEXT_FIELDS: { name: "firstName" | "lastName" | "preferredName" | "p
     { name: "position", label: "Position" },
 ];
 
-/** True when the value is a real calendar date written as YYYY-MM-DD. */
-function isIsoDate(value: string): boolean {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return false;
-    }
-    const date = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
-
 /** Checks the form values against the profile rules and returns an error message for each invalid field. */
 export function validateProfileForm(values: IProfileFormValues): ProfileFormErrors {
     const errors: ProfileFormErrors = {};
@@ -106,7 +113,7 @@ export function validateProfileForm(values: IProfileFormValues): ProfileFormErro
         }
     }
 
-    if (values.startDate !== "" && !isIsoDate(values.startDate)) {
+    if (values.startDate !== "" && !ClientUtils.isIsoDate(values.startDate)) {
         errors.startDate = "Enter a valid start date.";
     }
 

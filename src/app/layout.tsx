@@ -4,7 +4,7 @@ import AppShell from "../components/AppShell";
 import CurrentUserProvider from "../components/CurrentUserProvider";
 import { authService } from "../logic/auth/AuthService";
 import { profileService } from "../logic/profiles/ProfileService";
-import { hasRoleAtLeast } from "../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     const user = await authService.getCurrentUser();
     // The menu shows how many submitted profiles are waiting, so an editor or admin notices a new submission.
     const awaitingReviewCount: number =
-        user && hasRoleAtLeast(user.role, "editor") ? await profileService.countAwaitingReview() : 0;
+        user && hasRoleAtLeast(user.role, UserRole.Editor) ? await profileService.countAwaitingReview() : 0;
 
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>

@@ -1,13 +1,17 @@
 import "server-only";
-import { createHash, randomBytes } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import type { ChangePasswordResult, IAuthService, SignInResult } from "../../interface/auth/AuthService";
+import { AuditAction, AuditActorType } from "../../models/Audit";
 import type { ICurrentUser } from "../../models/CurrentUser";
 import { validatePassword } from "../../models/Password";
 import { ALLOWED_EMAIL_DOMAIN } from "../../models/ProfileForm";
 import { SESSION_COOKIE } from "../../models/SessionCookie";
+import type { UserRole } from "../../models/UserRole";
 import { db } from "../../prisma/Database";
+import type { Prisma } from "../../prisma/generated/client";
+import { ServerUtils } from "../../utils/ServerUtils";
+import { recordAuditEvent } from "../audit/AuditRecorder";
 import { hashPassword, verifyPassword } from "./PasswordHasher";
 
 /** How long a session lasts. TODO: the spec does not say; 8 hours is a placeholder. */
@@ -21,26 +25,37 @@ const SIGN_IN_ERROR = "Invalid email or password, or the account is locked. Ask 
 // Checked when the email is unknown, so unknown and known emails take about the same time to answer.
 const dummyHash: Promise<string> = hashPassword("password-used-only-to-even-out-timing");
 
-/** Only this hash of the token is stored, so reading the database does not give anyone a working token. */
-function hashToken(token: string): string {
-    return createHash("sha256").update(token).digest("hex");
-}
-
-/** Counts a wrong password and locks the account once it reaches the limit. */
+/** Counts a wrong password and locks the account once it reaches the limit, recording the lock in the audit log. */
 async function recordFailedAttempt(userId: string): Promise<void> {
     const updated = await db.user.update({
         where: { id: userId },
         data: { failedSignInAttempts: { increment: 1 } },
     });
-    if (updated.failedSignInAttempts >= MAX_FAILED_SIGN_IN_ATTEMPTS) {
-        await db.user.update({ where: { id: userId }, data: { lockedAt: new Date() } });
+    if (updated.failedSignInAttempts < MAX_FAILED_SIGN_IN_ATTEMPTS) {
+        return;
     }
+    await db.$transaction(async (tx: Prisma.TransactionClient): Promise<void> => {
+        // Only an account that is not locked yet is locked, so one lock is recorded once.
+        const locked = await tx.user.updateMany({
+            where: { id: userId, lockedAt: null },
+            data: { lockedAt: new Date() },
+        });
+        if (locked.count > 0) {
+            await recordAuditEvent(tx, {
+                action: AuditAction.AccountLocked,
+                actor: { type: AuditActorType.System },
+                targetId: userId,
+                targetEmail: updated.email,
+                details: { failedSignInAttempts: updated.failedSignInAttempts },
+            });
+        }
+    });
 }
 
 async function startSession(userId: string): Promise<void> {
-    const token: string = randomBytes(32).toString("base64url");
+    const token: string = ServerUtils.generateToken();
     const expiresAt: Date = new Date(Date.now() + SESSION_HOURS * 60 * 60 * 1000);
-    await db.session.create({ data: { userId, tokenHash: hashToken(token), expiresAt } });
+    await db.session.create({ data: { userId, tokenHash: ServerUtils.hashToken(token), expiresAt } });
 
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE, token, {
@@ -59,13 +74,14 @@ const readCurrentUser = cache(async (): Promise<ICurrentUser | null> => {
         return null;
     }
     const session = await db.session.findUnique({
-        where: { tokenHash: hashToken(token) },
+        where: { tokenHash: ServerUtils.hashToken(token) },
         include: { user: true },
     });
     if (!session || session.expiresAt <= new Date() || session.user.lockedAt !== null) {
         return null;
     }
-    return { id: session.user.id, email: session.user.email, role: session.user.role };
+    // The database only holds valid roles, so its value is a UserRole.
+    return { id: session.user.id, email: session.user.email, role: session.user.role as UserRole };
 });
 
 export const authService: IAuthService = {
@@ -101,7 +117,7 @@ export const authService: IAuthService = {
         const cookieStore = await cookies();
         const token: string | undefined = cookieStore.get(SESSION_COOKIE)?.value;
         if (token) {
-            await db.session.deleteMany({ where: { tokenHash: hashToken(token) } });
+            await db.session.deleteMany({ where: { tokenHash: ServerUtils.hashToken(token) } });
         }
         cookieStore.delete(SESSION_COOKIE);
     },
@@ -135,7 +151,7 @@ export const authService: IAuthService = {
         // Sign out every other browser, keeping this one, in case the old password was known to someone else.
         const token: string | undefined = (await cookies()).get(SESSION_COOKIE)?.value;
         await db.session.deleteMany({
-            where: { userId: user.id, ...(token ? { tokenHash: { not: hashToken(token) } } : {}) },
+            where: { userId: user.id, ...(token ? { tokenHash: { not: ServerUtils.hashToken(token) } } : {}) },
         });
         return { ok: true };
     },
