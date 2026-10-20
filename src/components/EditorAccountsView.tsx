@@ -1,75 +1,78 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { hasRoleAtLeast } from "../models/UserRole";
-import { profileStatusLabels } from "../models/ProfileStatus";
-import { matchesAccountStatus, type AccountStatusFilter, type IEditorAccount } from "../models/EditorAccount";
+import { useState, useTransition } from "react";
+import { deleteProfileAction } from "../app/editor/profiles/actions";
+import { hasRoleAtLeast, UserRole } from "../models/UserRole";
+import { profileStatusLabels, ProfileStatus } from "../models/ProfileStatus";
+import {
+    emptyEditorAccountFilter,
+    editorAccountListPath,
+    type AccountStatusFilter,
+    type IEditorAccount,
+    type IEditorAccountFilter,
+} from "../models/EditorAccount";
+import type { IPage } from "../models/Paging";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
 import { useCurrentRole } from "./CurrentUserProvider";
 import EditorToolbar from "./EditorToolbar";
 import Icon from "./Icon";
+import Pagination from "./Pagination";
 import PersonCell from "./PersonCell";
+import { useServerFilter, type IServerFilter } from "./ServerFilter";
 
 interface IEditorAccountsViewProps {
-    /** Profiles and accounts, loaded on the server. */
-    initialAccounts: IEditorAccount[];
+    /** One page of the profiles and accounts that match the filter, loaded on the server. */
+    accounts: IPage<IEditorAccount>;
+    /** The filter the list was loaded with, read from the page address. */
+    filter: IEditorAccountFilter;
 }
 
 /**
- * Editor page body: the toolbar plus a table of accounts and their profile and account status.
+ * Editor page body: the toolbar plus a page of accounts and their profile and account status. The server filters and
+ * pages the list; the filter and page live in the page address.
  */
-export default function EditorAccountsView({ initialAccounts }: IEditorAccountsViewProps) {
-    const [search, setSearch] = useState<string>("");
-    const [status, setStatus] = useState<AccountStatusFilter>("all");
-    const [startDate, setStartDate] = useState<string>("");
-    const [accounts, setAccounts] = useState<IEditorAccount[]>(initialAccounts);
+export default function EditorAccountsView({ accounts, filter }: IEditorAccountsViewProps) {
+    const { inputs, isLoading, typeText, choose, clear }: IServerFilter<IEditorAccountFilter> = useServerFilter(
+        filter,
+        editorAccountListPath,
+        emptyEditorAccountFilter,
+    );
     const [pendingDelete, setPendingDelete] = useState<IEditorAccount | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    const [isDeleting, startDeleting] = useTransition();
 
-    const canDeleteProfiles: boolean = hasRoleAtLeast(useCurrentRole(), "editor");
+    const canDeleteProfiles: boolean = hasRoleAtLeast(useCurrentRole(), UserRole.Editor);
 
     function confirmDeleteProfile(): void {
         if (!pendingDelete) {
             return;
         }
         const target: IEditorAccount = pendingDelete;
-        // TODO: delete the profile through the API once it exists; this only changes the list on this page.
-        setAccounts((current: IEditorAccount[]) =>
-            target.hasAccount
-                ? current.map((account: IEditorAccount) =>
-                      account.id === target.id
-                          ? { ...account, hasProfile: false, position: null, startDate: null }
-                          : account,
-                  )
-                : current.filter((account: IEditorAccount) => account.id !== target.id),
-        );
-        setNotice(`Deleted the Get To Know Me profile for ${target.name}.`);
         setPendingDelete(null);
+        setNotice(null);
+        // The action refreshes this page, so the list reloads from the server once the profile is deleted.
+        startDeleting(async () => {
+            const deleted: boolean = await deleteProfileAction(target.id);
+            setNotice(
+                deleted
+                    ? `Deleted the Get To Know Me profile for ${target.name}.`
+                    : `Could not delete the profile for ${target.name}. It may already be deleted, or you may not be allowed.`,
+            );
+        });
     }
-
-    const searchText: string = search.trim().toLowerCase();
-    const visibleAccounts: IEditorAccount[] = accounts.filter((account: IEditorAccount) => {
-        const matchesSearch: boolean =
-            searchText === "" ||
-            account.name.toLowerCase().includes(searchText) ||
-            account.email.toLowerCase().includes(searchText) ||
-            (account.position ?? "").toLowerCase().includes(searchText);
-        const matchesStartDate: boolean =
-            startDate === "" || (account.startDate !== null && account.startDate >= startDate);
-        return matchesSearch && matchesStartDate && matchesAccountStatus(account, status);
-    });
 
     return (
         <>
             <EditorToolbar
-                search={search}
-                onSearchChange={setSearch}
-                status={status}
-                onStatusChange={setStatus}
-                startDate={startDate}
-                onStartDateChange={setStartDate}
+                search={inputs.search}
+                onSearchChange={(search: string) => typeText("search", search)}
+                status={inputs.status}
+                onStatusChange={(status: AccountStatusFilter) => choose("status", status)}
+                startDate={inputs.startedFrom}
+                onStartDateChange={(startedFrom: string) => choose("startedFrom", startedFrom)}
+                onClear={clear}
             />
             <div className="p-6">
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -85,7 +88,10 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                     </Link>
                 </div>
                 {notice && <ActionNotice message={notice} onDismiss={() => setNotice(null)} />}
-                <div className="overflow-x-auto">
+                <div
+                    aria-busy={isLoading}
+                    className={`overflow-x-auto transition-opacity ${isLoading ? "opacity-60" : ""}`}
+                >
                     <table className="table-zebra table">
                         <thead>
                             <tr>
@@ -99,7 +105,7 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                             </tr>
                         </thead>
                         <tbody>
-                            {visibleAccounts.map((account: IEditorAccount) => (
+                            {accounts.items.map((account: IEditorAccount) => (
                                 <tr key={account.id}>
                                     <td>
                                         <PersonCell name={account.name} />
@@ -109,7 +115,8 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                                     <td>{account.startDate ?? "—"}</td>
                                     <td>
                                         {account.hasProfile ? (
-                                            account.profileStatus === "published" || account.profileStatus === null ? (
+                                            account.profileStatus === ProfileStatus.Published ||
+                                            account.profileStatus === null ? (
                                                 <span className="badge badge-success badge-sm">Has profile</span>
                                             ) : (
                                                 <span className="badge badge-warning badge-sm">
@@ -156,6 +163,7 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                                                     type="button"
                                                     className="btn btn-ghost btn-sm text-error"
                                                     aria-label={`Delete profile for ${account.name}`}
+                                                    disabled={isDeleting}
                                                     onClick={() => setPendingDelete(account)}
                                                 >
                                                     <Icon name="delete" />
@@ -166,7 +174,7 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                                     </td>
                                 </tr>
                             ))}
-                            {visibleAccounts.length === 0 && (
+                            {accounts.items.length === 0 && (
                                 <tr>
                                     <td colSpan={7} className="text-center">
                                         Nothing matches these filters.
@@ -176,6 +184,14 @@ export default function EditorAccountsView({ initialAccounts }: IEditorAccountsV
                         </tbody>
                     </table>
                 </div>
+                <Pagination
+                    page={accounts.page}
+                    pageSize={accounts.pageSize}
+                    totalCount={accounts.totalCount}
+                    itemLabel="people"
+                    onPageChange={(page: number) => choose("page", page)}
+                    onPageSizeChange={(pageSize: number) => choose("pageSize", pageSize)}
+                />
             </div>
             {pendingDelete && (
                 <ConfirmDialog

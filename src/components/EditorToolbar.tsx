@@ -9,6 +9,8 @@ interface IEditorToolbarProps {
     onStatusChange: (status: AccountStatusFilter) => void;
     startDate: string;
     onStartDateChange: (value: string) => void;
+    /** Clears every filter together. */
+    onClear: () => void;
 }
 
 /**
@@ -21,14 +23,9 @@ export default function EditorToolbar({
     onStatusChange,
     startDate,
     onStartDateChange,
+    onClear,
 }: IEditorToolbarProps) {
     const hasFilters: boolean = search !== "" || status !== "all" || startDate !== "";
-
-    function clearFilters(): void {
-        onSearchChange("");
-        onStatusChange("all");
-        onStartDateChange("");
-    }
 
     return (
         <section className="bg-base-100 border-base-300 flex flex-wrap items-center gap-3 border-b px-6 py-3">
@@ -57,7 +54,7 @@ export default function EditorToolbar({
                 ))}
             </select>
             <DatePicker label="Started on or after" value={startDate} onChange={onStartDateChange} />
-            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={clearFilters}>
+            <button type="button" className="btn btn-ghost" disabled={!hasFilters} onClick={onClear}>
                 <Icon name="filter_alt_off" />
                 Clear
             </button>

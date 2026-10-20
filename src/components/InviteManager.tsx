@@ -9,7 +9,7 @@ import {
 } from "../app/editor/invites/actions";
 import type { IPendingInvite } from "../models/Invite";
 import { ALLOWED_EMAIL_DOMAIN, emptyProfileForm, type IProfileFormValues, type ProfileFormErrors } from "../models/ProfileForm";
-import { profileStatusLabels } from "../models/ProfileStatus";
+import { profileStatusLabels, ProfileStatus } from "../models/ProfileStatus";
 import ActionNotice from "./ActionNotice";
 import ConfirmDialog from "./ConfirmDialog";
 import DatePicker from "./DatePicker";
@@ -125,7 +125,7 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
         );
     }
 
-    const awaitingReview: IPendingInvite[] = pendingInvites.filter((invite: IPendingInvite) => invite.status === "awaiting_review");
+    const awaitingReview: IPendingInvite[] = pendingInvites.filter((invite: IPendingInvite) => invite.status === ProfileStatus.AwaitingReview);
 
     return (
         <div className="flex flex-col gap-8 p-6">
@@ -235,13 +235,13 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
                                     <td>{invite.position ?? "—"}</td>
                                     <td>
                                         <span
-                                            className={`badge badge-sm ${invite.status === "awaiting_review" ? "badge-warning" : "badge-ghost"}`}
+                                            className={`badge badge-sm ${invite.status === ProfileStatus.AwaitingReview ? "badge-warning" : "badge-ghost"}`}
                                         >
                                             {profileStatusLabels[invite.status]}
                                         </span>
                                     </td>
                                     <td>
-                                        {invite.status === "awaiting_review"
+                                        {invite.status === ProfileStatus.AwaitingReview
                                             ? `Submitted ${invite.submittedOn ?? ""}`
                                             : invite.isExpired
                                               ? `Expired ${invite.expiresOn}`
@@ -249,7 +249,7 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
                                     </td>
                                     <td>
                                         <div className="flex flex-wrap items-center gap-1">
-                                            {invite.status === "awaiting_review" ? (
+                                            {invite.status === ProfileStatus.AwaitingReview ? (
                                                 <Link
                                                     href={`/editor/profiles/${invite.profileId}/edit`}
                                                     className="btn btn-primary btn-sm"

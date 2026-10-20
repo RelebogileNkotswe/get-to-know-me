@@ -1,4 +1,4 @@
-import { getInitials } from "../models/Employee";
+import { ClientUtils } from "../utils/ClientUtils";
 
 interface IPersonPhotoProps {
     name: string;
@@ -25,7 +25,7 @@ export default function PersonPhoto({ name, photoUrl, className, initialsClassNa
             className={`${className} bg-brand-navy border border-brand-green/20 text-brand-green flex items-center justify-center font-semibold ${initialsClassName}`}
             aria-hidden="true"
         >
-            {getInitials(name)}
+            {ClientUtils.getInitials(name)}
         </div>
     );
 }

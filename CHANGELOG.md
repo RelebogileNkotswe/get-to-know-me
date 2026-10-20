@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2026-10-20 - FrontEndCommits
+## [0.11.0] - 2026-10-20 - FrontEndCommits
 
 ### Fixed
 - `statusFilter` ("All / Linked / Pending" chips) is now included in `EmployeeToolbar`'s `hasFilters` check and reset by the Clear button; previously, selecting a status filter disabled the Clear button and clearing search left the status filter active.
@@ -13,6 +13,53 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - Bare `<span className="material-symbols-outlined">` icons in `LoginForm` and `NoProfileNotice` replaced with `<Icon />`, which sets `aria-hidden="true"`; previously screen readers announced the ligature text ("error", "lock", "sync") aloud.
 - `Icon` accepts an optional `className` prop so callers can add size and colour utilities without duplicating the component.
 - `package-lock.json` restored from `main`; the committed lockfile referenced version 0.5.0 and omitted `react-easy-crop` and `sharp`, causing `npm ci` to fail.
+## [0.10.0] - 2026-10-19 - pdf-export
+
+### Added
+- PDF export for editors and admins: "Export as PDF (A5 format)" opens `/employees/<id>/print`, one A5 sheet with no menu, saved through the browser's print dialog. Colours are kept, and email and LinkedIn are plain text.
+- A warning on the print page when the text is too long for one A5 page. The sheet uses tighter spacing, so the current 500-character limit fits.
+- `ProfileTemplate`, shared by the profile page and the print page so the PDF matches the screen.
+
+### Known gaps
+- No server-made PDF file (needs a host that can run a headless browser), the logo is still text, and exports are not in the audit log.
+
+## [0.9.0] - 2026-10-19 - auditing
+
+### Added
+- Audit log: a record of who did what to which account or profile, and when. It covers role changes, unlocks, accounts locked after five wrong passwords, profiles created, edited (the names of the changed fields, never their values), published and deleted, photos saved, and invites created, renewed, cancelled and submitted. New `audit_events` table (migration `20261019091110_add_audit_events`); the app only ever adds rows.
+- Each event is saved in the same database transaction as the change it records, so a change is never saved without its record, and a failed change leaves no record.
+- The actor of each event is a signed-in user, a new joiner using their private invite link, or the system (automatic lockouts). Emails are copied into the record, so it stays readable after the user or profile is deleted.
+- Audit log page for admins (`/admin/audit`, "Audit log" in the side menu): search by email, filter by action and date range (South African time), 10 per page by default, newest first, with short summaries such as "Viewer → Editor" or "Changed: Position".
+- `ClientUtils.companyTimeZone`, `startOfCompanyDay` and `formatDateTime`.
+
+### Changed
+- `UserRole`, `ProfileStatus`, `AuditAction` and `AuditActorType` are TypeScript enums with the same values as the database (e.g. `UserRole.Editor = "editor"`), and code uses the enum members instead of string literals.
+- Services that change data take the actor as a parameter (`AuditActor`), and server actions pass the signed-in user (`currentUserWithRole` replaces `currentUserHasRole`). `findOpenInviteProfileId` became `findOpenInvite`, which also returns the invitee's email.
+- Role changes run the last-admin check, the update and the audit record in one transaction.
+- `DatePicker` gives each instance its own popover, so several can share a page.
+- Empty filter constants renamed to camelCase (`emptyEmployeeFilter`, `emptyEditorAccountFilter`, `emptyUserAccountFilter`), matching `emptyProfileForm`.
+
+### Known gaps
+- No retention period for audit events yet (to agree with the data owner); rows are never deleted.
+- Sign-ins, sign-outs and password changes are not recorded.
+
+## [0.8.0] - 2026-10-19 - server-side-filtering
+
+### Added
+- Pagination on the employee, editor and admin lists: a "Showing 1–20 of 87" summary, page buttons and a per-page choice of 10, 20, 50 or 100 (`ClientUtils.pageSizes`). The employee list shows 20 per page by default; the editor and admin lists show 10. The database returns one page at a time, a page past the end shows the last page, and changing a filter or the page size goes back to page 1.
+- One shared `Pagination` component (DaisyUI `join`) and a `useServerFilter` hook (`src/components/ServerFilter.ts`) used by all three lists.
+- `src/utils/ClientUtils.ts` (helpers safe in the browser and on the server: dates, strings, ids, URL parameters, paging, photo cropping) and `src/utils/ServerUtils.ts` (`server-only`: tokens, Prisma errors, search helpers).
+
+### Changed
+- Search and filters on the employee, editor and admin lists run in the database instead of the browser. The filter and page are kept in the page address (e.g. `/?search=sample&page=2`), so a filtered list can be bookmarked, shared or reloaded.
+- Search matches each word on its own and ignores case, so "sample one" finds a first name "Sample" with a last name "One". Preferred name is now searchable on the employee and editor lists.
+- The new starter carousel follows the employee list search and start date, so it only shows people who also match the list.
+- The editor list's Delete button deletes the profile on the server and reloads the list (it previously only removed the row on the page).
+- Helpers spread across components, models and services (date, crop, token, UUID and Prisma helpers, including three duplicates) moved into `ClientUtils` and `ServerUtils`. `DateUtils.ts`, `CropImage.ts` and `InviteToken.ts` were removed.
+
+### Fixed
+- A search for `%` or `_` matched every row, because Prisma passes these SQL wildcards through; they are now escaped (`ServerUtils.escapeLikePattern`).
+- Removed `file.ts` from the repository root, so `next build` type-checks cleanly again.
 
 ## [0.7.0] - 2026-10-13 - image-upload
 

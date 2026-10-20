@@ -8,6 +8,8 @@ import Icon from "./Icon";
 import ProfileMenu from "./ProfileMenu";
 import SideMenu from "./SideMenu";
 
+const PRINT_PAGE_PATH = /^\/employees\/[^/]+\/print$/;
+
 interface IAppShellProps {
     children: React.ReactNode;
 }
@@ -25,7 +27,8 @@ export default function AppShell({ children }: IAppShellProps) {
     }
 
     // A new joiner's private invite page is only their form, with no menu or top bar, even when someone signed in opens it.
-    if (pathname.startsWith("/invite/")) {
+    // The same goes for the PDF export page, so only the A5 sheet prints.
+    if (pathname.startsWith("/invite/") || PRINT_PAGE_PATH.test(pathname)) {
         return <>{children}</>;
     }
 

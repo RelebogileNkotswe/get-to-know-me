@@ -3,7 +3,7 @@ import EmployeeProfileView from "../../../components/EmployeeProfileView";
 import { requireUser } from "../../../logic/auth/RequireUser";
 import { photoService } from "../../../logic/photos/PhotoService";
 import { profileService } from "../../../logic/profiles/ProfileService";
-import { hasRoleAtLeast } from "../../../models/UserRole";
+import { hasRoleAtLeast, UserRole } from "../../../models/UserRole";
 
 export default async function EmployeeProfilePage(props: PageProps<"/employees/[id]">) {
     const user = await requireUser();
@@ -17,7 +17,7 @@ export default async function EmployeeProfilePage(props: PageProps<"/employees/[
         <EmployeeProfileView
             profileId={id}
             profile={profile}
-            canEdit={hasRoleAtLeast(user.role, "editor")}
+            canEdit={hasRoleAtLeast(user.role, UserRole.Editor)}
             photoUrl={await photoService.getPhotoUrl(id)}
         />
     );

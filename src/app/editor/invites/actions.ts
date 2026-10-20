@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { currentUserHasRole } from "../../../logic/auth/RequireUser";
+import { currentUserWithRole } from "../../../logic/auth/RequireUser";
 import { inviteService } from "../../../logic/invites/InviteService";
+import { userActor } from "../../../models/Audit";
 import { inviteLinkPath } from "../../../models/Invite";
 import type { IProfileFormValues, ProfileFormErrors } from "../../../models/ProfileForm";
+import { UserRole } from "../../../models/UserRole";
 
 /** The new link as a path on this site; the screen adds the site's own address in front of it. */
 export type InviteLinkResult = { ok: true; profileId: string; linkPath: string } | { ok: false; errors: ProfileFormErrors };
@@ -21,10 +23,11 @@ function refreshLists(): void {
 
 // Server actions can be called directly with a POST request, so each one checks the signed-in user's role itself.
 export async function createInviteAction(values: IProfileFormValues): Promise<InviteLinkResult> {
-    if (!(await currentUserHasRole("editor"))) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return NOT_ALLOWED;
     }
-    const result = await inviteService.createInvite(values);
+    const result = await inviteService.createInvite(values, userActor(editor));
     if (!result.ok) {
         return result;
     }
@@ -34,10 +37,11 @@ export async function createInviteAction(values: IProfileFormValues): Promise<In
 
 /** Replaces an invite's link. Returns the new link path, or null when the invite can no longer be renewed. */
 export async function renewInviteLinkAction(profileId: string): Promise<string | null> {
-    if (!(await currentUserHasRole("editor"))) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return null;
     }
-    const token: string | null = await inviteService.renewLink(profileId);
+    const token: string | null = await inviteService.renewLink(profileId, userActor(editor));
     if (token === null) {
         return null;
     }
@@ -47,10 +51,11 @@ export async function renewInviteLinkAction(profileId: string): Promise<string |
 
 /** Returns true when the invite was cancelled. */
 export async function cancelInviteAction(profileId: string): Promise<boolean> {
-    if (!(await currentUserHasRole("editor"))) {
+    const editor = await currentUserWithRole(UserRole.Editor);
+    if (!editor) {
         return false;
     }
-    const cancelled: boolean = await inviteService.cancelInvite(profileId);
+    const cancelled: boolean = await inviteService.cancelInvite(profileId, userActor(editor));
     if (cancelled) {
         refreshLists();
     }

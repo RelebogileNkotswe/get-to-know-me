@@ -7,6 +7,8 @@ interface IEmployeeToolbarProps {
     onSearchChange: (value: string) => void;
     startDate: string;
     onStartDateChange: (value: string) => void;
+    /** Clears the search and the start date together. */
+    onClear: () => void;
     view: EmployeeView;
     onViewChange: (view: EmployeeView) => void;
     statusFilter: "all" | "linked" | "pending";
@@ -21,6 +23,7 @@ export default function EmployeeToolbar({
     onSearchChange,
     startDate,
     onStartDateChange,
+    onClear,
     view,
     onViewChange,
     statusFilter,
