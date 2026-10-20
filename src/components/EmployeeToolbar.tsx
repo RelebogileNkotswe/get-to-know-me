@@ -9,6 +9,8 @@ interface IEmployeeToolbarProps {
     onStartDateChange: (value: string) => void;
     view: EmployeeView;
     onViewChange: (view: EmployeeView) => void;
+    statusFilter: "all" | "linked" | "pending";
+    onStatusFilterChange: (filter: "all" | "linked" | "pending") => void;
 }
 
 /**
@@ -21,12 +23,15 @@ export default function EmployeeToolbar({
     onStartDateChange,
     view,
     onViewChange,
+    statusFilter,
+    onStatusFilterChange,
 }: IEmployeeToolbarProps) {
-    const hasFilters: boolean = search !== "" || startDate !== "";
+    const hasFilters: boolean = search !== "" || startDate !== "" || statusFilter !== "all";
 
     function clearFilters(): void {
         onSearchChange("");
         onStartDateChange("");
+        onStatusFilterChange("all");
     }
 
     return (

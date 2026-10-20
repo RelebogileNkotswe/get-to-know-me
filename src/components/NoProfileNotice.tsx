@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { requestProfileAction } from "../app/profile/actions";
+import Icon from "./Icon";
 
 interface INoProfileNoticeProps {
     /** True when the user already asked for a profile. */
@@ -29,7 +30,7 @@ export default function NoProfileNotice({ alreadyRequested }: INoProfileNoticePr
     return (
         <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-green/20 bg-brand-green/5 px-6 py-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-                <span className="material-symbols-outlined text-[16px] text-brand-green shrink-0">info</span>
+                <Icon name="info" className="text-[16px] text-brand-green shrink-0" />
                 <p className="text-sm text-white/70">
                     {isRequested
                         ? "Your profile request has been sent — an editor will create it for you."

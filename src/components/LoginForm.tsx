@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { signInAction, type ISignInFormState } from "../app/login/actions";
+import Icon from "./Icon";
 
 const initialState: ISignInFormState = { error: null, email: "" };
 
@@ -55,7 +56,7 @@ export default function LoginForm() {
 
                 {state.error && (
                     <div role="alert" className="p-3 rounded-lg bg-error-container/20 border border-error/30 flex items-start gap-2 text-xs text-error">
-                        <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5">error</span>
+                        <Icon name="error" className="text-[16px] shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{state.error}</span>
                     </div>
                 )}
@@ -65,12 +66,12 @@ export default function LoginForm() {
                         <label className="text-xs font-semibold text-on-surface flex items-center justify-between">
                                 <span>Company Email</span>
                                 <span className="text-[11px] text-brand-green flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[13px]">verified</span>
+                                    <Icon name="verified" className="text-[13px]" />
                                     @singular.co.za
                                 </span>
                             </label>
                         <div className="relative flex items-center">
-                            <span className="material-symbols-outlined text-[16px] text-outline absolute left-3">mail</span>
+                            <Icon name="mail" className="text-[16px] text-outline absolute left-3" />
                             <input
                                 type="email"
                                 name="email"
@@ -95,7 +96,7 @@ export default function LoginForm() {
                             </button>
                         </div>
                         <div className="relative flex items-center">
-                            <span className="material-symbols-outlined text-[16px] text-outline absolute left-3">lock</span>
+                            <Icon name="lock" className="text-[16px] text-outline absolute left-3" />
                             <input
                                 type={showPassword ? "text" : "password"}
                                 name="password"
@@ -110,9 +111,7 @@ export default function LoginForm() {
                                 className="absolute right-3 text-outline hover:text-on-surface"
                                 title={showPassword ? "Hide password" : "Show password"}
                             >
-                                <span className="material-symbols-outlined text-[16px]">
-                                    {showPassword ? "visibility_off" : "visibility"}
-                                </span>
+                                <Icon name={showPassword ? "visibility_off" : "visibility"} className="text-[16px]" />
                             </button>
                         </div>
                     </div>
@@ -124,7 +123,7 @@ export default function LoginForm() {
                     >
                         {isPending ? (
                             <>
-                                <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                <Icon name="sync" className="text-[18px] animate-spin" />
                                 <span>Signing in...</span>
                             </>
                         ) : (

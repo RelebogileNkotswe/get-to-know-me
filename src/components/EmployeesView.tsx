@@ -49,6 +49,8 @@ export default function EmployeesView({ employees }: IEmployeesViewProps) {
                 onStartDateChange={setStartDate}
                 view={view}
                 onViewChange={setView}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
             />
             <div className="p-6">
                 <EmployeeCarousel newStarters={employees.filter((employee: IEmployee) => employee.isNewStarter)} />

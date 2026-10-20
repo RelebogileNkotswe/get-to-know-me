@@ -58,7 +58,7 @@ export default function AppShell({ children }: IAppShellProps) {
                         <ProfileMenu />
                     </div>
                 </div>
-                <div className="flex flex-1 flex-col bg-brand-navy">{children}</div>
+                <div className="flex flex-1 flex-col">{children}</div>
             </div>
             <div className="drawer-side">
                 <label htmlFor={DRAWER_TOGGLE_ID} className="drawer-overlay" aria-label="Close menu"></label>
