@@ -25,7 +25,7 @@ export default function PersonCell({ name, photoUrl }: IPersonCellProps) {
                     unoptimized
                 />
             )}
-            <span className="text-sm font-medium text-white">{name}</span>
+            <span className="text-sm font-medium text-base-content">{name}</span>
         </div>
     );
 }

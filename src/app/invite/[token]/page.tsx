@@ -54,8 +54,8 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
             <div>
                 <h1 className="text-2xl font-semibold">Welcome to Singular Systems</h1>
                 <p className="text-base-content/70 mt-2">
-                    Tell your new colleagues a bit about yourself. When you submit, someone will review your profile before it
-                    is published.
+                    Tell your new colleagues a bit about yourself. When you submit, someone will review your profile
+                    before it is published.
                 </p>
             </div>
             <ProfileForm mode="invite" inviteToken={token} initialValues={invite.values} />

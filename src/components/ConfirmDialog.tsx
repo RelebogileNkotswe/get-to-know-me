@@ -35,22 +35,16 @@ export default function ConfirmDialog({
 
     return (
         <dialog ref={dialogRef} className="modal" onClose={onCancel}>
-            <div className="modal-box bg-brand-navy-light border border-white/10 rounded-2xl p-6 shadow-xl">
-                <h3 className="text-lg font-bold text-white">{title}</h3>
-                <p className="mt-2 mb-6 text-sm text-white/60">{message}</p>
-                <div className="flex justify-end gap-2">
+            <div className="modal-box bg-brand-navy-light border border-white/10">
+                <h3 className="text-lg font-bold">{title}</h3>
+                <p className="py-4 text-sm text-base-content/70">{message}</p>
+                <div className="modal-action">
                     <form method="dialog">
-                        <button className="inline-flex items-center px-4 py-2 rounded-lg border border-white/10 text-white/70 text-sm font-semibold hover:bg-white/5 hover:text-white transition-all">
-                            Cancel
-                        </button>
+                        <button className="btn btn-ghost">Cancel</button>
                     </form>
                     <button
                         type="button"
-                        className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-[0.99] ${
-                            isDestructive
-                                ? "bg-error text-white hover:brightness-90"
-                                : "bg-brand-green text-brand-navy hover:brightness-90"
-                        }`}
+                        className={`btn ${isDestructive ? "btn-error" : "btn-primary"}`}
                         onClick={onConfirm}
                     >
                         {confirmLabel}

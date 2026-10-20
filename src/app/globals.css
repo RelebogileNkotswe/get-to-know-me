@@ -1,73 +1,92 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* Custom dark brand theme — maps daisyUI semantic tokens to the navy/green palette so all daisyUI
-   components (table, badge, btn, select, input, alert) are dark by default across every page. */
+/* ─── Dark brand theme ────────────────────────────────────────────────────────
+   Exact hex values so #0b1b30 stays pure navy (oklch approximations were
+   introducing a grey shift). base-200 = card backgrounds; base-100 = page bg. */
 @plugin "daisyui/theme" {
     name: "brand";
     default: true;
     color-scheme: dark;
-    --color-base-100: oklch(15% 0.055 237);
-    --color-base-200: oklch(20% 0.06 237);
-    --color-base-300: oklch(24% 0.065 237);
-    --color-base-content: oklch(100% 0 0);
-    --color-primary: oklch(81% 0.175 162);
-    --color-primary-content: oklch(15% 0.055 237);
-    --color-secondary: oklch(24% 0.065 237);
-    --color-secondary-content: oklch(72% 0.04 220);
-    --color-accent: oklch(81% 0.175 162);
-    --color-accent-content: oklch(15% 0.055 237);
-    --color-neutral: oklch(28% 0.05 237);
-    --color-neutral-content: oklch(72% 0.04 220);
-    --color-info: oklch(72% 0.14 240);
-    --color-info-content: oklch(100% 0 0);
-    --color-success: oklch(81% 0.175 162);
-    --color-success-content: oklch(15% 0.055 237);
-    --color-warning: oklch(83% 0.18 85);
-    --color-warning-content: oklch(20% 0.06 85);
-    --color-error: oklch(65% 0.24 27);
-    --color-error-content: oklch(100% 0 0);
+    --color-base-100: #0b1b30;
+    --color-base-200: #132a47;
+    --color-base-300: #1a3558;
+    --color-base-content: #ffffff;
+    --color-primary: #09fd9d;
+    --color-primary-content: #0b1b30;
+    --color-secondary: #1a3558;
+    --color-secondary-content: #a0b4c8;
+    --color-accent: #09fd9d;
+    --color-accent-content: #0b1b30;
+    --color-neutral: #253c52;
+    --color-neutral-content: #a0b4c8;
+    --color-info: #60a5fa;
+    --color-info-content: #000000;
+    --color-success: #09fd9d;
+    --color-success-content: #0b1b30;
+    --color-warning: #fbbf24;
+    --color-warning-content: #000000;
+    --color-error: #f87171;
+    --color-error-content: #000000;
 }
 
-/* Brand colours from the Get To Know Me design: dark navy surfaces and a green accent. */
+/* ─── Light brand theme ───────────────────────────────────────────────────────
+   Warm off-white page, pure white cards, dark navy text.
+   primary = #57bc79 (green on white); sidebar always overrides with data-theme="brand". */
+@plugin "daisyui/theme" {
+    name: "brand-light";
+    default: false;
+    color-scheme: light;
+    --color-base-100: #f0efe9;
+    --color-base-200: #ffffff;
+    --color-base-300: #e4e3dc;
+    --color-base-content: #0b1b30;
+    --color-primary: #57bc79;
+    --color-primary-content: #ffffff;
+    --color-secondary: #e0f0ea;
+    --color-secondary-content: #0b1b30;
+    --color-accent: #57bc79;
+    --color-accent-content: #ffffff;
+    --color-neutral: #0b1b30;
+    --color-neutral-content: #ffffff;
+    --color-info: #3b82f6;
+    --color-info-content: #ffffff;
+    --color-success: #57bc79;
+    --color-success-content: #ffffff;
+    --color-warning: #f59e0b;
+    --color-warning-content: #000000;
+    --color-error: #ef4444;
+    --color-error-content: #ffffff;
+}
+
+/* ─── Brand colour tokens (Tailwind utilities) ────────────────────────────────
+   bg-brand-navy / text-brand-green etc. always refer to these fixed values
+   regardless of the active theme — use them only on elements that are always dark
+   (sidebar, employee card dark section, status chips). */
 @theme {
     --color-brand-navy: #0b1b30;
     --color-brand-navy-light: #132a47;
-    --color-brand-green: #2fe3a5;
+    --color-brand-green: #09fd9d;
 
-    /* Surface scale — dark navy palette */
+    /* Legacy surface scale kept for components that haven't migrated to daisyUI tokens */
     --color-surface: #0b1b30;
     --color-surface-container-low: #0f2342;
     --color-surface-container: #132a47;
     --color-surface-container-high: #1a3558;
     --color-surface-container-highest: #1e3d65;
-
-    /* Primary — brand green */
-    --color-primary: #2fe3a5;
-    --color-primary-container: #1a7a5a;
-    --color-on-primary: #0b1b30;
-    --color-on-primary-container: #cffae9;
-
-    /* Content */
     --color-on-surface: #ffffff;
     --color-on-surface-variant: #a0b4c8;
-
-    /* Borders */
     --color-outline: #3c5975;
     --color-outline-variant: #253c52;
-
-    /* Secondary */
     --color-secondary-container: #1a3558;
-
-    /* Error */
     --color-error: #f87171;
     --color-error-container: #7f1d1d;
 
-    /* Headline font alias */
-    --font-headline: var(--font-geist-sans);
+    /* Poppins is loaded by next/font; next/font sets --font-poppins on <html>. */
+    --font-headline: var(--font-poppins);
 }
 
-/* PDF export: one A5 sheet, no margins, colours kept even when the print dialog turns background graphics off. */
+/* ─── PDF export ──────────────────────────────────────────────────────────── */
 @page profile-a5 {
     size: A5 portrait;
     margin: 0;
@@ -82,7 +101,7 @@
     print-color-adjust: exact;
 }
 
-/* New starter carousel: two identical groups of cards side by side, scrolled left by exactly one group, so it loops without a jump. */
+/* ─── New starter carousel ────────────────────────────────────────────────── */
 @keyframes new-starters-scroll {
     from {
         transform: translateX(0);
@@ -111,14 +130,12 @@
     padding-right: 1rem;
 }
 
-/* Paused while someone points at, presses or tabs into the carousel. */
 .new-starters-track:hover,
 .new-starters-track:active,
 .new-starters-track:focus-within {
     animation-play-state: paused;
 }
 
-/* Reduced motion: no movement. The row stays still and can be scrolled by hand, and the copy used for looping is hidden. */
 @media (prefers-reduced-motion: reduce) {
     .new-starters-viewport {
         overflow-x: auto;

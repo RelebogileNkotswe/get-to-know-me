@@ -68,7 +68,9 @@ export default function AdminUsersView({ users, filter, currentUserId }: IAdminU
     }
 
     function confirmRoleChange(): void {
-        if (!pending) return;
+        if (!pending) {
+            return;
+        }
         const { user, role: newRole } = pending;
         setPending(null);
         runAction(
@@ -92,126 +94,144 @@ export default function AdminUsersView({ users, filter, currentUserId }: IAdminU
             />
 
             <div className="p-6 flex flex-col gap-6">
-
-                {/* Page header */}
                 <div>
-                    <h1 className="text-2xl font-bold text-white">User and role management</h1>
-                    <p className="text-white/50 mt-1.5 text-sm">
+                    <h1 className="text-2xl font-bold text-base-content">User and role management</h1>
+                    <p className="text-base-content/70 mt-1.5 text-sm">
                         Change roles and unlock accounts. Everyone starts as a viewer.
                     </p>
                 </div>
 
                 {notice && <ActionNotice message={notice} onDismiss={() => setNotice(null)} />}
                 {error && (
-                    <div role="alert" className="flex items-center gap-3 bg-error/10 border border-error/30 rounded-xl px-5 py-3">
-                        <Icon name="error" className="text-error shrink-0 text-[18px]" />
-                        <span className="text-sm text-error">{error}</span>
+                    <div role="alert" className="alert alert-error alert-soft">
+                        <Icon name="error" />
+                        <span>{error}</span>
                     </div>
                 )}
 
-                {/* Users table card */}
-                {users.items.length === 0 ? (
-                    <div className="bg-brand-navy-light border border-white/10 rounded-xl flex flex-col items-center justify-center py-16 gap-3">
-                        <span className="flex size-12 items-center justify-center rounded-full bg-white/5 text-white/30">
-                            <Icon name="manage_accounts" className="text-[24px]" />
-                        </span>
-                        <p className="text-sm text-white/40">No users match these filters.</p>
-                    </div>
-                ) : (
-                    <div className="bg-brand-navy-light border border-white/10 rounded-xl overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-white/10 text-[10px] font-bold text-outline uppercase tracking-wider">
-                                    <th className="text-left px-5 py-3">Name</th>
-                                    <th className="text-left px-5 py-3">Email</th>
-                                    <th className="text-left px-5 py-3">Role</th>
-                                    <th className="text-left px-5 py-3">Status</th>
-                                    <th className="text-left px-5 py-3">Last sign-in</th>
-                                    <th className="px-5 py-3"><span className="sr-only">Actions</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.items.map((user: IUserAccount) => {
-                                    const isSelf: boolean = user.id === currentUserId;
-                                    return (
-                                        <tr key={user.id} className="border-b border-white/5 hover:bg-brand-navy/50 transition-colors">
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <PersonCell name={user.name} />
-                                                    {isSelf && (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-green/15 text-brand-green border border-brand-green/25">
-                                                            You
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-3 text-white/60">{user.email}</td>
-                                            <td className="px-5 py-3">
-                                                {isSelf ? (
-                                                    <span className="text-white/80">{roleLabels[user.role]}</span>
-                                                ) : (
-                                                    <select
-                                                        className="bg-brand-navy border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/80 outline-none focus:border-brand-green/60 transition-colors"
-                                                        aria-label={`Role for ${user.name}`}
-                                                        value={user.role}
-                                                        disabled={isWorking}
-                                                        onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-                                                            setPending({ user, role: event.target.value as UserRole })
-                                                        }
-                                                    >
-                                                        {ROLES.map((option: UserRole) => (
-                                                            <option key={option} value={option}>
-                                                                {roleLabels[option]}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                {user.isLocked ? (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-error/15 text-error border border-error/25">
-                                                        Locked
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-green/15 text-brand-green border border-brand-green/25">
-                                                        Active
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-3 text-white/50 text-xs">
-                                                {user.lastSignIn ?? "Never"}
-                                            </td>
-                                            <td className="px-5 py-3 text-right">
-                                                {user.isLocked ? (
-                                                    <button
-                                                        type="button"
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/10 text-white/70 text-xs font-semibold hover:bg-white/5 hover:text-white transition-all disabled:opacity-40"
-                                                        aria-label={`Unlock ${user.name}`}
-                                                        disabled={isWorking}
-                                                        onClick={() =>
-                                                            runAction(
-                                                                () => unlockUserAction(user.id),
-                                                                `Unlocked the account for ${user.name}.`,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Icon name="lock_open" />
-                                                        Unlock
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-xs text-white/25">
-                                                        {isSelf ? "Protected" : ""}
-                                                    </span>
-                                                )}
-                                            </td>
+                <div
+                    aria-busy={isLoading}
+                    className={`flex flex-col gap-4 transition-opacity ${isLoading ? "opacity-60" : ""}`}
+                >
+                    {users.items.length === 0 ? (
+                        <div className="bg-base-200 border border-base-300 rounded-xl flex flex-col items-center justify-center py-16 gap-3">
+                            <span className="flex size-12 items-center justify-center rounded-full bg-base-300/50 text-base-content/30">
+                                <Icon name="manage_accounts" className="text-[24px]" />
+                            </span>
+                            <p className="text-sm text-base-content/40">No users match these filters.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-base-200 border border-base-300 rounded-xl overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-base-300 text-[10px] font-bold text-base-content/40 uppercase tracking-wider">
+                                            <th className="text-left px-5 py-3">Name</th>
+                                            <th className="text-left px-5 py-3">Email</th>
+                                            <th className="text-left px-5 py-3">Role</th>
+                                            <th className="text-left px-5 py-3">Status</th>
+                                            <th className="text-left px-5 py-3">Last sign-in</th>
+                                            <th className="px-5 py-3">
+                                                <span className="sr-only">Actions</span>
+                                            </th>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                    </thead>
+                                    <tbody>
+                                        {users.items.map((user: IUserAccount) => {
+                                            const isSelf: boolean = user.id === currentUserId;
+                                            return (
+                                                <tr
+                                                    key={user.id}
+                                                    className="border-b border-base-300/50 hover:bg-base-300/30 transition-colors"
+                                                >
+                                                    <td className="px-5 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <PersonCell name={user.name} />
+                                                            {isSelf && (
+                                                                <span className="badge badge-success badge-sm">
+                                                                    You
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-5 py-3 text-base-content/60">{user.email}</td>
+                                                    <td className="px-5 py-3">
+                                                        {isSelf ? (
+                                                            <span>{roleLabels[user.role]}</span>
+                                                        ) : (
+                                                            <select
+                                                                className="select select-sm w-32"
+                                                                aria-label={`Role for ${user.name}`}
+                                                                value={user.role}
+                                                                disabled={isWorking}
+                                                                onChange={(
+                                                                    event: React.ChangeEvent<HTMLSelectElement>,
+                                                                ) =>
+                                                                    setPending({
+                                                                        user,
+                                                                        role: event.target.value as UserRole,
+                                                                    })
+                                                                }
+                                                            >
+                                                                {ROLES.map((option: UserRole) => (
+                                                                    <option key={option} value={option}>
+                                                                        {roleLabels[option]}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-3">
+                                                        {user.isLocked ? (
+                                                            <span className="badge badge-error badge-sm">Locked</span>
+                                                        ) : (
+                                                            <span className="badge badge-success badge-sm">Active</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-5 py-3 text-base-content/50 text-xs">
+                                                        {user.lastSignIn ?? "Never"}
+                                                    </td>
+                                                    <td className="px-5 py-3 text-right">
+                                                        {user.isLocked ? (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-ghost btn-sm"
+                                                                aria-label={`Unlock ${user.name}`}
+                                                                disabled={isWorking}
+                                                                onClick={() =>
+                                                                    runAction(
+                                                                        () => unlockUserAction(user.id),
+                                                                        `Unlocked the account for ${user.name}.`,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Icon name="lock_open" />
+                                                                Unlock
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-xs text-base-content/30">
+                                                                {isSelf ? "Protected" : ""}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
 
+                    <Pagination
+                        page={users.page}
+                        pageSize={users.pageSize}
+                        totalCount={users.totalCount}
+                        itemLabel="users"
+                        onPageChange={(page: number) => choose("page", page)}
+                        onPageSizeChange={(pageSize: number) => choose("pageSize", pageSize)}
+                    />
+                </div>
             </div>
 
             {pending && (

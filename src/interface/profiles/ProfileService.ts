@@ -20,6 +20,18 @@ export interface IOwnProfileStatus {
     profileRequested: boolean;
 }
 
+/**
+ * The result of the employee list query: the paged employees plus global linked/pending counts
+ * that drive the status filter chips regardless of the current search or page.
+ */
+export interface IEmployeeListResult {
+    page: IPage<IEmployee>;
+    /** Total published profiles that have a linked user account. */
+    linkedCount: number;
+    /** Total published profiles that have no linked user account. */
+    pendingCount: number;
+}
+
 /** Contract for reading Get To Know Me profiles and the accounts linked to them. */
 export interface IProfileService {
     /** Returns whether a profile with this company email exists, and whether the account has asked for one. */
@@ -53,7 +65,7 @@ export interface IProfileService {
      * must appear (in any case) in the name, preferred name, position or one of the three profile text sections. A start
      * date that is not a valid ISO date is ignored.
      */
-    listPublishedEmployees(filter: IEmployeeFilter): Promise<IPage<IEmployee>>;
+    listPublishedEmployees(filter: IEmployeeFilter): Promise<IEmployeeListResult>;
 
     /**
      * Returns the published profiles of new starters for the carousel, filtered the same way as the employee list, so the

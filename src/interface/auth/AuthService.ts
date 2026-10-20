@@ -5,8 +5,7 @@ export type SignInResult = { ok: true } | { ok: false; error: string };
 
 /** Outcome of changing a password: an error message for each invalid field. */
 export type ChangePasswordResult =
-    | { ok: true }
-    | { ok: false; errors: { currentPassword?: string; newPassword?: string } };
+    { ok: true } | { ok: false; errors: { currentPassword?: string; newPassword?: string } };
 
 /** Contract for signing users in and out and for reading who is signed in. Server-side only. */
 export interface IAuthService {

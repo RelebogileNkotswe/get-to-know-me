@@ -9,7 +9,8 @@ import type { IProfileFormValues, ProfileFormErrors } from "../../../models/Prof
 import { UserRole } from "../../../models/UserRole";
 
 /** The new link as a path on this site; the screen adds the site's own address in front of it. */
-export type InviteLinkResult = { ok: true; profileId: string; linkPath: string } | { ok: false; errors: ProfileFormErrors };
+export type InviteLinkResult =
+    { ok: true; profileId: string; linkPath: string } | { ok: false; errors: ProfileFormErrors };
 
 const NOT_ALLOWED: InviteLinkResult = {
     ok: false,

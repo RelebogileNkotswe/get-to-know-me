@@ -15,13 +15,13 @@ export default function Breadcrumbs() {
         <nav className="flex items-center gap-1.5 text-sm" aria-label="Breadcrumb">
             {trail.map((crumb: IBreadcrumb, i: number) => (
                 <span key={crumb.label} className="flex items-center gap-1.5">
-                    {i > 0 && <span className="text-white/20">/</span>}
+                    {i > 0 && <span className="text-base-content/20">/</span>}
                     {crumb.href ? (
-                        <Link href={crumb.href} className="text-white/50 hover:text-white transition-colors">
+                        <Link href={crumb.href} className="text-base-content/50 hover:text-base-content transition-colors">
                             {crumb.label}
                         </Link>
                     ) : (
-                        <span aria-current="page" className="font-semibold text-white">
+                        <span aria-current="page" className="font-semibold text-base-content">
                             {crumb.label}
                         </span>
                     )}

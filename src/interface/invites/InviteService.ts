@@ -3,7 +3,8 @@ import type { IPendingInvite } from "../../models/Invite";
 import type { IProfileFormValues, ProfileFormErrors } from "../../models/ProfileForm";
 
 /** Outcome of creating an invite: the one-time token to build the link from, or an error on each invalid field. */
-export type CreateInviteResult = { ok: true; profileId: string; token: string } | { ok: false; errors: ProfileFormErrors };
+export type CreateInviteResult =
+    { ok: true; profileId: string; token: string } | { ok: false; errors: ProfileFormErrors };
 
 /** What a new joiner sees when they open their link. */
 export type InviteLookup =

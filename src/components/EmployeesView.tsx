@@ -27,33 +27,31 @@ interface IEmployeesViewProps {
     newStarters: IEmployee[];
     /** The filter the list was loaded with, read from the page address. */
     filter: IEmployeeFilter;
+    /** Total published profiles with a linked user account, used to label the status chips. */
+    linkedCount: number;
+    /** Total published profiles with no linked user account, used to label the status chips. */
+    pendingCount: number;
 }
 
 /**
  * Employee list page body: the toolbar plus one page of employees shown as a table or as cards. The server filters and
  * pages the list; the filter and page live in the page address.
  */
-export default function EmployeesView({ employees, newStarters, filter }: IEmployeesViewProps) {
+export default function EmployeesView({
+    employees,
+    newStarters,
+    filter,
+    linkedCount,
+    pendingCount,
+}: IEmployeesViewProps) {
     const { inputs, isLoading, typeText, choose, clear }: IServerFilter<IEmployeeFilter> = useServerFilter(
         filter,
         employeeListPath,
         emptyEmployeeFilter,
     );
     const [view, setView] = useState<EmployeeView>("card");
-    const [statusFilter, setStatusFilter] = useState<"all" | "linked" | "pending">("all");
-
     const showLinkStatus: boolean = hasRoleAtLeast(useCurrentRole(), UserRole.Editor);
     const items: IEmployee[] = employees.items;
-
-    const linkedCount = items.filter((e) => e.hasAccount).length;
-    const pendingCount = items.filter((e) => !e.hasAccount).length;
-
-
-    const visibleEmployees: IEmployee[] = items.filter((employee: IEmployee) =>
-        statusFilter === "all" ||
-        (statusFilter === "linked" && employee.hasAccount) ||
-        (statusFilter === "pending" && !employee.hasAccount),
-    );
 
     return (
         <>
@@ -65,32 +63,30 @@ export default function EmployeesView({ employees, newStarters, filter }: IEmplo
                 onClear={clear}
                 view={view}
                 onViewChange={setView}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
+                statusFilter={inputs.status}
+                onStatusFilterChange={(s) => choose("status", s)}
             />
             <div className="p-6">
-
                 <EmployeeCarousel newStarters={newStarters} />
                 <div aria-busy={isLoading} className={`transition-opacity ${isLoading ? "opacity-60" : ""}`}>
-                    {/* Status filter chips — client-side filter on the current page */}
                     {showLinkStatus && (
                         <div className="flex items-center gap-2 mb-5 flex-wrap">
                             {(["all", "linked", "pending"] as const).map((f) => (
                                 <button
                                     key={f}
                                     type="button"
-                                    onClick={() => setStatusFilter(f)}
+                                    onClick={() => choose("status", f)}
                                     className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                                        statusFilter === f && f === "pending"
-                                            ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                                            : statusFilter === f
-                                            ? "bg-brand-green text-brand-navy"
-                                            : f === "pending"
-                                            ? "bg-white/5 text-yellow-400/60 border border-white/10 hover:text-yellow-400 hover:border-yellow-500/20"
-                                            : "bg-white/5 text-white/50 border border-white/10 hover:text-white hover:border-white/20"
+                                        inputs.status === f && f === "pending"
+                                            ? "bg-yellow-500/20 text-yellow-500 border border-yellow-500/30"
+                                            : inputs.status === f
+                                              ? "bg-primary text-primary-content"
+                                              : f === "pending"
+                                                ? "bg-base-200 text-warning/70 border border-warning/30 hover:text-warning hover:border-warning/50"
+                                                : "bg-base-200 text-base-content/50 border border-base-300 hover:text-base-content hover:border-base-content/30"
                                     }`}
                                 >
-                                    {f === "all" && `All (${items.length})`}
+                                    {f === "all" && `All (${linkedCount + pendingCount})`}
                                     {f === "linked" && `Linked (${linkedCount})`}
                                     {f === "pending" && `Pending (${pendingCount})`}
                                 </button>
@@ -98,47 +94,54 @@ export default function EmployeesView({ employees, newStarters, filter }: IEmplo
                         </div>
                     )}
 
-                    {visibleEmployees.length === 0 && (
+                    {items.length === 0 && (
                         <p className="text-sm text-outline py-10 text-center">No employees match.</p>
                     )}
-                    {visibleEmployees.length > 0 && view === "list" && (
-                        <div className="bg-brand-navy-light border border-white/10 rounded-xl overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-white/10 text-[10px] font-bold text-outline uppercase tracking-wider">
-                                        <th className="text-left px-5 py-3">Name</th>
-                                        <th className="text-left px-5 py-3">Position</th>
-                                        <th className="text-left px-5 py-3">Start date</th>
-                                        <th className="px-5 py-3"><span className="sr-only">View profile</span></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {visibleEmployees.map((employee: IEmployee) => (
-                                        <tr key={employee.id} className="border-b border-white/5 hover:bg-brand-navy/50 transition-colors">
-                                            <td className="px-5 py-3">
-                                                <PersonCell name={employee.name} photoUrl={employee.photoUrl} />
-                                            </td>
-                                            <td className="px-5 py-3 text-white/60">{employee.position}</td>
-                                            <td className="px-5 py-3 text-white/60">{employee.startDate}</td>
-                                            <td className="px-5 py-3 text-right">
-                                                <Link
-                                                    href={`/employees/${employee.id}`}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/10 text-white/80 text-xs font-semibold hover:bg-brand-green hover:text-brand-navy hover:border-brand-green transition-all"
-                                                    aria-label={`View profile for ${employee.name}`}
-                                                >
-                                                    <Icon name="visibility" />
-                                                    View
-                                                </Link>
-                                            </td>
+                    {items.length > 0 && view === "list" && (
+                        <div className="bg-base-200 border border-base-300 rounded-xl overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-base-300 text-[10px] font-bold text-base-content/40 uppercase tracking-wider">
+                                            <th className="text-left px-5 py-3">Name</th>
+                                            <th className="text-left px-5 py-3">Position</th>
+                                            <th className="text-left px-5 py-3">Start date</th>
+                                            <th className="px-5 py-3">
+                                                <span className="sr-only">View profile</span>
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {items.map((employee: IEmployee) => (
+                                            <tr
+                                                key={employee.id}
+                                                className="border-b border-base-300/50 hover:bg-base-300/30 transition-colors"
+                                            >
+                                                <td className="px-5 py-3">
+                                                    <PersonCell name={employee.name} photoUrl={employee.photoUrl} />
+                                                </td>
+                                                <td className="px-5 py-3 text-base-content/60">{employee.position}</td>
+                                                <td className="px-5 py-3 text-base-content/60">{employee.startDate}</td>
+                                                <td className="px-5 py-3 text-right">
+                                                    <Link
+                                                        href={`/employees/${employee.id}`}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-base-300 text-base-content/70 text-xs font-semibold hover:bg-primary hover:text-primary-content hover:border-primary transition-all"
+                                                        aria-label={`View profile for ${employee.name}`}
+                                                    >
+                                                        <Icon name="visibility" />
+                                                        View
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
-                    {visibleEmployees.length > 0 && view === "card" && (
+                    {items.length > 0 && view === "card" && (
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {visibleEmployees.map((employee: IEmployee) => (
+                            {items.map((employee: IEmployee) => (
                                 <EmployeeCard key={employee.id} employee={employee} showLinkStatus={showLinkStatus} />
                             ))}
                         </div>
