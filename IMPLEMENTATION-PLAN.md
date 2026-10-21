@@ -49,7 +49,8 @@ Each phase is one ticket/branch (`GTKM-XXXX`), with its own `package.json` versi
 | 8 | PDF export | 5 | Reuses the template with A5 print rules. |
 | 9 | Admin: roles and locked accounts | 2 | Wires the existing admin UI to real accounts. |
 | 10 | Profile invites and review | 3, 4, 5, email | Reuses the form, photo, template and email; has the most open questions. |
-| 11 | Hardening and release | all | Security review, accessibility, retention, docs. |
+| 11 | Invites page — tabs and server-side filtering | 10 | UX improvement; independent of any other open phase. |
+| 12 | Hardening and release | all | Security review, accessibility, retention, docs. |
 
 Parallel work: the template HTML/CSS (phase 5) can start on sample data alongside phases 1 and 2, because it only needs the `IProfileFormValues` shape. Phase 9 can run alongside phases 3 to 8 once phase 2 is merged.
 
@@ -202,7 +203,35 @@ Progress (pdf-export, v0.10.0): print stylesheet approach built. `/employees/<id
 - Open questions to settle before this phase starts: who enters the company email, link expiry, resend and cancel, editing after submission, and send-back with comments.
 - Privacy: the personal email is only needed for the invite. Delete it once the profile is published or the invite expires.
 
-### Phase 11: Hardening and release
+### Phase 11: Invites page — tabs and server-side filtering
+
+Date: 2026-10-20 
+
+The current invites page shows the create form and the pending-invites table in one scrolling view. As the invite list grows this becomes hard to use, and unlike every other table in the app the pending-invites list has no search or server-side filtering.
+
+Work:
+
+- Split the page into two tabs using a tab strip consistent with the rest of the app's UI:
+  - `Invite new joiner` — the existing create-invite form and the generated-link panel.
+  - `Invited and waiting` for review — the pending-invites table, moved here from the first tab.
+- Add a toolbar to the "Invited and waiting for review" tab with at minimum:
+  - Search by name or email (server-side, matching the pattern in `EmployeesView`, `EditorAccountsView` and `AdminUsersView`).
+  - Status filter (Invited / Awaiting review / All).
+- Wire the table to server-side filtering and pagination via `useServerFilter`, matching the other tables (filter and page in the URL, `IPage<IPendingInvite>` from the server, `Pagination` component at the bottom).
+- Extend `InviteService.listPendingInvites` (or add a new method) to accept an `IPendingInviteFilter` and return `IPage<IPendingInvite>`.
+- Update `src/app/editor/invites/page.tsx` to read the filter from the page address and pass a page of results to the view.
+
+Acceptance checks:
+
+- Switching tabs does not reset the form or lose a generated link.
+- Searching "sample" on the invited tab shows only invites whose name or email contains "sample".
+- Filtering by "Awaiting review" hides invited-but-not-yet-submitted rows.
+- Pagination works correctly when there are more invites than the page size.
+- The URL reflects the filter so a filtered view can be bookmarked.
+
+Dependencies: none beyond the current invite feature.
+
+### Phase 12: Hardening and release
 
 - Run `/security-review` on the full branch; fix findings or log them in `TECH_DEBT.md`.
 - Accessibility pass: keyboard use of the cropper and carousel, colour contrast on the template, labels.

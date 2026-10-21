@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-10-20 - FrontEndCommits
+
+### Fixed
+- `statusFilter` ("All / Linked / Pending" chips) is now included in `EmployeeToolbar`'s `hasFilters` check and reset by the Clear button; previously, selecting a status filter disabled the Clear button and clearing search left the status filter active.
+- `AppShell` content wrapper no longer carries `bg-brand-navy`, which was causing daisyUI's default dark `text-base-content` to render on a navy background across `/profile`, `/admin`, `/editor`, `/editor/invites`, and `/editor/profiles/new`.
+- Bare `<span className="material-symbols-outlined">` icons in `LoginForm` and `NoProfileNotice` replaced with `<Icon />`, which sets `aria-hidden="true"`; previously screen readers announced the ligature text ("error", "lock", "sync") aloud.
+- `Icon` accepts an optional `className` prop so callers can add size and colour utilities without duplicating the component.
+- `package-lock.json` restored from `main`; the committed lockfile referenced version 0.5.0 and omitted `react-easy-crop` and `sharp`, causing `npm ci` to fail.
+
 ## [0.10.0] - 2026-10-19 - pdf-export
 
 ### Added

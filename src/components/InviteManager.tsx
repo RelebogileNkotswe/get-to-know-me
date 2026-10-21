@@ -43,7 +43,6 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
         setValues((current: IProfileFormValues) => ({ ...current, [name]: value }));
     }
 
-    /** The link as a full address: this site's own address plus the private path. */
     function toUrl(linkPath: string): string {
         return `${window.location.origin}${linkPath}`;
     }
@@ -108,38 +107,49 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
         }
     }
 
-    function renderField(name: keyof IProfileFormValues, legend: string, options: { type?: string; hint?: string } = {}) {
+    function renderField(
+        name: keyof IProfileFormValues,
+        legend: string,
+        options: { type?: string; hint?: string } = {},
+    ) {
         const error: string | undefined = errors[name];
         return (
-            <fieldset className="fieldset">
-                <legend className="fieldset-legend">{legend}</legend>
+            <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-white/70">{legend}</label>
                 <input
                     type={options.type ?? "text"}
-                    className={`input w-full ${error ? "input-error" : ""}`}
+                    className={`w-full bg-brand-navy border px-4 py-2.5 rounded-lg text-sm text-white placeholder:text-white/30 focus:outline-none transition-colors ${
+                        error ? "border-error/60 focus:border-error" : "border-white/10 focus:border-brand-green/60"
+                    }`}
                     aria-label={legend}
                     value={values[name]}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setValue(name, event.target.value)}
                 />
-                {(error || options.hint) && <p className={`label ${error ? "text-error" : ""}`}>{error ?? options.hint}</p>}
-            </fieldset>
+                {(error || options.hint) && (
+                    <p className={`text-xs ${error ? "text-error" : "text-white/40"}`}>{error ?? options.hint}</p>
+                )}
+            </div>
         );
     }
 
-    const awaitingReview: IPendingInvite[] = pendingInvites.filter((invite: IPendingInvite) => invite.status === ProfileStatus.AwaitingReview);
+    const awaitingReview: IPendingInvite[] = pendingInvites.filter((invite: IPendingInvite) => invite.status === ProfileStatus.AwaitingReview);
 
     return (
         <div className="flex flex-col gap-8 p-6">
+
+            {/* Page header */}
             <div>
-                <h1 className="text-2xl font-semibold">Invite a new joiner</h1>
-                <p className="text-base-content/70 mt-2 max-w-2xl">
-                    Create an invite, then copy the private link and send it to them yourself. They fill in their own profile
-                    without signing in, and you review it here before it is published.
+                <h1 className="text-2xl font-bold text-white">Invite a new joiner</h1>
+                <p className="text-white/50 mt-1.5 max-w-2xl text-sm">
+                    Create an invite, then copy the private link and send it to them yourself. They fill in their own
+                    profile without signing in, and you review it here before it is published.
                 </p>
             </div>
 
             {awaitingReview.length > 0 && (
-                <div role="status" className="alert alert-info alert-soft">
-                    <span>
+                <div role="status" className="flex items-center gap-3 bg-brand-green/10 border border-brand-green/30 rounded-xl px-5 py-3 max-w-3xl">
+                    <Icon name="rate_review" className="text-brand-green shrink-0" />
+                    <span className="text-sm text-white/80">
                         {awaitingReview.length === 1
                             ? "1 profile is waiting for your review."
                             : `${awaitingReview.length} profiles are waiting for your review.`}
@@ -147,19 +157,26 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
                 </div>
             )}
 
-            <form onSubmit={createInvite} noValidate className="flex max-w-3xl flex-col gap-2">
-                <h2 className="text-lg font-semibold">New invite</h2>
-                <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-                    {renderField("firstName", "First name")}
-                    {renderField("lastName", "Last name")}
-                    {renderField("companyEmail", "Company email *", {
-                        type: "email",
-                        hint: `Required. Must end in ${ALLOWED_EMAIL_DOMAIN}. It links their profile to their account, so check it carefully.`,
-                    })}
-                    {renderField("position", "Position")}
-                    <fieldset className="fieldset">
-                        <legend className="fieldset-legend">Start date</legend>
-                        <div>
+            {/* New invite form card */}
+            <div className="bg-brand-navy-light border border-white/10 rounded-2xl overflow-hidden max-w-3xl">
+                <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+                    <span className="flex size-8 items-center justify-center rounded-lg bg-brand-green/15 text-brand-green">
+                        <Icon name="person_add" />
+                    </span>
+                    <h2 className="font-semibold text-white">New invite</h2>
+                </div>
+
+                <form onSubmit={createInvite} noValidate className="p-6 flex flex-col gap-5">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {renderField("firstName", "First name")}
+                        {renderField("lastName", "Last name")}
+                        {renderField("companyEmail", "Company email *", {
+                            type: "email",
+                            hint: `Required. Must end in ${ALLOWED_EMAIL_DOMAIN}. It links their profile to their account, so check it carefully.`,
+                        })}
+                        {renderField("position", "Position")}
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs font-semibold text-white/70">Start date</span>
                             <DatePicker
                                 label="Select start date"
                                 valueOnly
@@ -167,135 +184,166 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
                                 onChange={(value: string) => setValue("startDate", value)}
                             />
                         </div>
-                    </fieldset>
-                </div>
-                <div>
-                    <button type="submit" className="btn btn-primary" disabled={isWorking}>
-                        <Icon name="link" />
-                        {isWorking ? "Working..." : "Create invite link"}
-                    </button>
-                </div>
-            </form>
+                    </div>
 
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isWorking}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-green text-brand-navy font-bold text-sm hover:brightness-90 transition-all active:scale-[0.99] disabled:opacity-50"
+                        >
+                            <Icon name="link" />
+                            {isWorking ? "Working..." : "Create invite link"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {/* Generated link card */}
             {shownLink && (
-                <section className="bg-base-200 rounded-box flex max-w-3xl flex-col gap-2 p-4" aria-label="Invite link">
-                    <h2 className="font-semibold">Link for {shownLink.name}</h2>
-                    <p className="text-base-content/70 text-sm">
-                        Copy this link and send it to them. It works for 14 days and only until they submit. For safety it is
-                        shown here only now; if you lose it, make a new link, which stops the old one working.
+                <div className="bg-brand-navy-light border border-brand-green/30 rounded-2xl p-6 max-w-3xl" aria-label="Invite link">
+                    <div className="flex items-center gap-3 mb-3">
+                        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-green/15 text-brand-green">
+                            <Icon name="link" />
+                        </span>
+                        <h2 className="font-semibold text-white">Link for {shownLink.name}</h2>
+                    </div>
+                    <p className="text-white/50 text-xs mb-4">
+                        Copy this link and send it to them. It works for 14 days and only until they submit. For
+                        safety it is shown here only now — if you lose it, make a new link, which stops the old one
+                        working.
                     </p>
                     <div className="flex flex-wrap gap-2">
                         <input
                             type="text"
                             readOnly
-                            className="input min-w-0 flex-1"
+                            className="min-w-0 flex-1 bg-brand-navy border border-white/10 px-4 py-2.5 rounded-lg text-sm text-white/80 focus:outline-none focus:border-brand-green/60 transition-colors"
                             aria-label="Invite link"
                             value={shownLink.url}
                             onFocus={(event: React.FocusEvent<HTMLInputElement>) => event.target.select()}
                         />
-                        <button type="button" className="btn btn-primary" onClick={() => void copyLink(shownLink.url)}>
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-green text-brand-navy font-bold text-sm hover:brightness-90 transition-all shrink-0"
+                            onClick={() => void copyLink(shownLink.url)}
+                        >
                             <Icon name="content_copy" />
                             Copy link
                         </button>
                     </div>
                     {copyMessage && (
-                        <p role="status" className="text-sm">
+                        <p role="status" className="text-xs text-brand-green mt-2">
                             {copyMessage}
                         </p>
                     )}
-                </section>
+                </div>
             )}
 
             {notice && <ActionNotice message={notice} onDismiss={() => setNotice(null)} />}
             {problem && (
-                <div role="alert" className="alert alert-error alert-soft">
-                    <span>{problem}</span>
+                <div role="alert" className="flex items-center gap-3 bg-error/10 border border-error/30 rounded-xl px-5 py-3 max-w-3xl">
+                    <Icon name="error" className="text-error shrink-0 text-[18px]" />
+                    <span className="text-sm text-error">{problem}</span>
                 </div>
             )}
 
-            <section className="flex flex-col gap-2">
-                <h2 className="text-lg font-semibold">Invited and waiting for review</h2>
-                <div className="overflow-x-auto">
-                    <table className="table-zebra table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Position</th>
-                                <th>Status</th>
-                                <th>Link / submitted</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {pendingInvites.map((invite: IPendingInvite) => (
-                                <tr key={invite.profileId}>
-                                    <td>{invite.name}</td>
-                                    <td>{invite.email}</td>
-                                    <td>{invite.position ?? "—"}</td>
-                                    <td>
-                                        <span
-                                            className={`badge badge-sm ${invite.status === ProfileStatus.AwaitingReview ? "badge-warning" : "badge-ghost"}`}
-                                        >
-                                            {profileStatusLabels[invite.status]}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {invite.status === ProfileStatus.AwaitingReview
-                                            ? `Submitted ${invite.submittedOn ?? ""}`
-                                            : invite.isExpired
-                                              ? `Expired ${invite.expiresOn}`
-                                              : `Valid until ${invite.expiresOn}`}
-                                    </td>
-                                    <td>
-                                        <div className="flex flex-wrap items-center gap-1">
-                                            {invite.status === ProfileStatus.AwaitingReview ? (
-                                                <Link
-                                                    href={`/editor/profiles/${invite.profileId}/edit`}
-                                                    className="btn btn-primary btn-sm"
-                                                    aria-label={`Review the profile for ${invite.name}`}
-                                                >
-                                                    <Icon name="rate_review" />
-                                                    Review
-                                                </Link>
-                                            ) : (
-                                                <>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        disabled={isWorking}
-                                                        aria-label={`Make a new link for ${invite.name}`}
-                                                        onClick={() => renewLink(invite)}
-                                                    >
-                                                        <Icon name="autorenew" />
-                                                        New link
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm text-error"
-                                                        disabled={isWorking}
-                                                        aria-label={`Cancel the invite for ${invite.name}`}
-                                                        onClick={() => setPendingCancel(invite)}
-                                                    >
-                                                        <Icon name="cancel" />
-                                                        Cancel
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {pendingInvites.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="text-center">
-                                        No invites yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+            {/* Invites table */}
+            <section className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-white">Invited and waiting for review</h2>
+                    {pendingInvites.length > 0 && (
+                        <span className="text-xs text-white/40">{pendingInvites.length} {pendingInvites.length === 1 ? "person" : "people"}</span>
+                    )}
                 </div>
+
+                {pendingInvites.length === 0 ? (
+                    <div className="bg-brand-navy-light border border-white/10 rounded-xl flex flex-col items-center justify-center py-16 gap-3">
+                        <span className="flex size-12 items-center justify-center rounded-full bg-white/5 text-white/30">
+                            <Icon name="mail" className="text-[24px]" />
+                        </span>
+                        <p className="text-sm text-white/40">No invites yet.</p>
+                        <p className="text-xs text-white/25">Create your first invite above.</p>
+                    </div>
+                ) : (
+                    <div className="bg-brand-navy-light border border-white/10 rounded-xl overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-white/10 text-[10px] font-bold text-outline uppercase tracking-wider">
+                                    <th className="text-left px-5 py-3">Name</th>
+                                    <th className="text-left px-5 py-3">Email</th>
+                                    <th className="text-left px-5 py-3">Position</th>
+                                    <th className="text-left px-5 py-3">Status</th>
+                                    <th className="text-left px-5 py-3">Link / submitted</th>
+                                    <th className="px-5 py-3"><span className="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pendingInvites.map((invite: IPendingInvite) => (
+                                    <tr key={invite.profileId} className="border-b border-white/5 hover:bg-brand-navy/50 transition-colors">
+                                        <td className="px-5 py-3 font-medium text-white">{invite.name}</td>
+                                        <td className="px-5 py-3 text-white/60">{invite.email}</td>
+                                        <td className="px-5 py-3 text-white/60">{invite.position ?? "—"}</td>
+                                        <td className="px-5 py-3">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                                                    invite.status === "awaiting_review"
+                                                        ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                                        : "bg-white/5 text-white/50 border border-white/10"
+                                                }`}
+                                            >
+                                                {profileStatusLabels[invite.status]}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3 text-white/50 text-xs">
+                                            {invite.status === "awaiting_review"
+                                                ? `Submitted ${invite.submittedOn ?? ""}`
+                                                : invite.isExpired
+                                                  ? <span className="text-error/70">Expired {invite.expiresOn}</span>
+                                                  : `Valid until ${invite.expiresOn}`}
+                                        </td>
+                                        <td className="px-5 py-3">
+                                            <div className="flex flex-wrap items-center gap-1 justify-end">
+                                                {invite.status === "awaiting_review" ? (
+                                                    <Link
+                                                        href={`/editor/profiles/${invite.profileId}/edit`}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-brand-green text-brand-navy text-xs font-bold hover:brightness-90 transition-all"
+                                                        aria-label={`Review the profile for ${invite.name}`}
+                                                    >
+                                                        <Icon name="rate_review" />
+                                                        Review
+                                                    </Link>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/10 text-white/70 text-xs font-semibold hover:bg-white/5 hover:text-white transition-all disabled:opacity-40"
+                                                            disabled={isWorking}
+                                                            aria-label={`Make a new link for ${invite.name}`}
+                                                            onClick={() => renewLink(invite)}
+                                                        >
+                                                            <Icon name="autorenew" />
+                                                            New link
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-error/20 text-error/70 text-xs font-semibold hover:bg-error/10 hover:text-error hover:border-error/40 transition-all disabled:opacity-40"
+                                                            disabled={isWorking}
+                                                            aria-label={`Cancel the invite for ${invite.name}`}
+                                                            onClick={() => setPendingCancel(invite)}
+                                                        >
+                                                            <Icon name="cancel" />
+                                                            Cancel
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </section>
 
             {pendingCancel && (

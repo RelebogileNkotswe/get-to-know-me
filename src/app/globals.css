@@ -1,11 +1,70 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Custom dark brand theme — maps daisyUI semantic tokens to the navy/green palette so all daisyUI
+   components (table, badge, btn, select, input, alert) are dark by default across every page. */
+@plugin "daisyui/theme" {
+    name: "brand";
+    default: true;
+    color-scheme: dark;
+    --color-base-100: oklch(15% 0.055 237);
+    --color-base-200: oklch(20% 0.06 237);
+    --color-base-300: oklch(24% 0.065 237);
+    --color-base-content: oklch(100% 0 0);
+    --color-primary: oklch(81% 0.175 162);
+    --color-primary-content: oklch(15% 0.055 237);
+    --color-secondary: oklch(24% 0.065 237);
+    --color-secondary-content: oklch(72% 0.04 220);
+    --color-accent: oklch(81% 0.175 162);
+    --color-accent-content: oklch(15% 0.055 237);
+    --color-neutral: oklch(28% 0.05 237);
+    --color-neutral-content: oklch(72% 0.04 220);
+    --color-info: oklch(72% 0.14 240);
+    --color-info-content: oklch(100% 0 0);
+    --color-success: oklch(81% 0.175 162);
+    --color-success-content: oklch(15% 0.055 237);
+    --color-warning: oklch(83% 0.18 85);
+    --color-warning-content: oklch(20% 0.06 85);
+    --color-error: oklch(65% 0.24 27);
+    --color-error-content: oklch(100% 0 0);
+}
+
 /* Brand colours from the Get To Know Me design: dark navy surfaces and a green accent. */
 @theme {
     --color-brand-navy: #0b1b30;
     --color-brand-navy-light: #132a47;
     --color-brand-green: #2fe3a5;
+
+    /* Surface scale — dark navy palette */
+    --color-surface: #0b1b30;
+    --color-surface-container-low: #0f2342;
+    --color-surface-container: #132a47;
+    --color-surface-container-high: #1a3558;
+    --color-surface-container-highest: #1e3d65;
+
+    /* Primary — brand green */
+    --color-primary: #2fe3a5;
+    --color-primary-container: #1a7a5a;
+    --color-on-primary: #0b1b30;
+    --color-on-primary-container: #cffae9;
+
+    /* Content */
+    --color-on-surface: #ffffff;
+    --color-on-surface-variant: #a0b4c8;
+
+    /* Borders */
+    --color-outline: #3c5975;
+    --color-outline-variant: #253c52;
+
+    /* Secondary */
+    --color-secondary-container: #1a3558;
+
+    /* Error */
+    --color-error: #f87171;
+    --color-error-container: #7f1d1d;
+
+    /* Headline font alias */
+    --font-headline: var(--font-geist-sans);
 }
 
 /* PDF export: one A5 sheet, no margins, colours kept even when the print dialog turns background graphics off. */
