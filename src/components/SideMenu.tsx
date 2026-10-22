@@ -73,17 +73,22 @@ export default function SideMenu() {
 
     return (
         <nav
+            data-theme="brand"
             className="bg-brand-navy flex min-h-screen w-64 flex-col gap-6 p-4 text-white"
             aria-label="Main navigation"
         >
             <div className="px-3 pt-2">
-                <p className="text-lg leading-tight font-bold">Singular</p>
-                <p className="text-brand-green text-xs font-semibold tracking-widest uppercase">Get to know me</p>
+                <p className="font-headline text-lg leading-tight font-bold">Singular</p>
+                <p className="font-headline text-brand-green text-xs font-semibold tracking-widest uppercase">
+                    Get to know me
+                </p>
             </div>
 
             <div className="flex flex-col gap-5">
                 {sectionOrder.map((section) => {
-                    const links: ISideMenuLink[] = visibleLinks.filter((item: ISideMenuLink) => item.section === section);
+                    const links: ISideMenuLink[] = visibleLinks.filter(
+                        (item: ISideMenuLink) => item.section === section,
+                    );
                     if (links.length === 0) {
                         return null;
                     }

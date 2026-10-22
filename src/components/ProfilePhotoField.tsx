@@ -131,7 +131,9 @@ export default function ProfilePhotoField({ onChange, error, currentPhotoUrl }: 
                         aria-label="Employee photo"
                         onChange={handleFileChosen}
                     />
-                    {previewUrl && <p className="text-success text-sm">New photo ready. It is saved when you save the form.</p>}
+                    {previewUrl && (
+                        <p className="text-success text-sm">New photo ready. It is saved when you save the form.</p>
+                    )}
                 </div>
             </div>
             <p className={`label ${shownError ? "text-error" : ""}`}>
@@ -167,7 +169,9 @@ export default function ProfilePhotoField({ onChange, error, currentPhotoUrl }: 
                             step={0.05}
                             value={zoom}
                             aria-label="Zoom"
-                            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setZoom(Number(event.target.value))}
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                setZoom(Number(event.target.value))
+                            }
                         />
                     </label>
                     <div className="modal-action">

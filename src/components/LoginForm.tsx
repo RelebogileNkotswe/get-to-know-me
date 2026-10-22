@@ -15,9 +15,7 @@ export default function LoginForm() {
 
     return (
         <div className="min-h-screen w-full bg-surface flex flex-col items-center justify-center p-4">
-
             <div className="w-full max-w-sm bg-surface-container border border-outline-variant/40 rounded-xl p-8 flex flex-col gap-5 shadow-lg">
-
                 <div className="flex flex-col items-center gap-0.5 pb-2">
                     <img
                         alt="Singular Systems"
@@ -55,7 +53,10 @@ export default function LoginForm() {
                 </div>
 
                 {state.error && (
-                    <div role="alert" className="p-3 rounded-lg bg-error-container/20 border border-error/30 flex items-start gap-2 text-xs text-error">
+                    <div
+                        role="alert"
+                        className="p-3 rounded-lg bg-error-container/20 border border-error/30 flex items-start gap-2 text-xs text-error"
+                    >
                         <Icon name="error" className="text-[16px] shrink-0 mt-0.5" />
                         <span className="leading-relaxed">{state.error}</span>
                     </div>
@@ -64,12 +65,12 @@ export default function LoginForm() {
                 <form action={formAction} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-on-surface flex items-center justify-between">
-                                <span>Company Email</span>
-                                <span className="text-[11px] text-brand-green flex items-center gap-1">
-                                    <Icon name="verified" className="text-[13px]" />
-                                    @singular.co.za
-                                </span>
-                            </label>
+                            <span>Company Email</span>
+                            <span className="text-[11px] text-brand-green flex items-center gap-1">
+                                <Icon name="verified" className="text-[13px]" />
+                                @singular.co.za
+                            </span>
+                        </label>
                         <div className="relative flex items-center">
                             <Icon name="mail" className="text-[16px] text-outline absolute left-3" />
                             <input
@@ -89,7 +90,11 @@ export default function LoginForm() {
                             <label className="text-xs font-semibold text-on-surface">Password</label>
                             <button
                                 type="button"
-                                onClick={() => alert("Please contact IT Desk at it-support@singular.co.za or ask an administrator.")}
+                                onClick={() =>
+                                    alert(
+                                        "Please contact IT Desk at it-support@singular.co.za or ask an administrator.",
+                                    )
+                                }
                                 className="text-xs text-brand-green hover:underline"
                             >
                                 Forgot password?
@@ -139,4 +144,3 @@ export default function LoginForm() {
         </div>
     );
 }
-

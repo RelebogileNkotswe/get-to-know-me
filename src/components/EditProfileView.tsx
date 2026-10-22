@@ -72,7 +72,9 @@ export default function EditProfileView({
             setIsProfileDeleted(true);
             setNotice(null);
         } else {
-            setNotice(`Could not delete the profile for ${name}. It may already be deleted, or you may not be allowed.`);
+            setNotice(
+                `Could not delete the profile for ${name}. It may already be deleted, or you may not be allowed.`,
+            );
         }
     }
 
@@ -130,7 +132,9 @@ export default function EditProfileView({
                 </div>
                 {!isProfileDeleted && (
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`badge ${status === ProfileStatus.Published ? "badge-success" : "badge-warning"}`}>
+                        <span
+                            className={`badge ${status === ProfileStatus.Published ? "badge-success" : "badge-warning"}`}
+                        >
                             {profileStatusLabels[status]}
                         </span>
                         {status === ProfileStatus.AwaitingReview && (

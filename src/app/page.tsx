@@ -10,12 +10,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     const user = await requireUser();
     const filter: IEmployeeFilter = employeeFilterFromParams(await searchParams);
     const canReview: boolean = hasRoleAtLeast(user.role, UserRole.Editor);
-    const [employees, newStarters, ownStatus, awaitingReview] = await Promise.all([
+    const [employeeList, newStarters, ownStatus, awaitingReview] = await Promise.all([
         profileService.listPublishedEmployees(filter),
         profileService.listNewStarters(filter),
         profileService.getOwnProfileStatus(user.email),
         canReview ? profileService.countAwaitingReview() : Promise.resolve(0),
     ]);
+    const { page: employees, linkedCount, pendingCount } = employeeList;
 
     return (
         <>
@@ -32,7 +33,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 </div>
             )}
             {!ownStatus.hasProfile && <NoProfileNotice alreadyRequested={ownStatus.profileRequested} />}
-            <EmployeesView employees={employees} newStarters={newStarters} filter={filter} />
+            <EmployeesView
+                employees={employees}
+                newStarters={newStarters}
+                filter={filter}
+                linkedCount={linkedCount}
+                pendingCount={pendingCount}
+            />
         </>
     );
 }

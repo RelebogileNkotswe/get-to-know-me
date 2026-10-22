@@ -28,10 +28,13 @@ export default function NoProfileNotice({ alreadyRequested }: INoProfileNoticePr
     }
 
     return (
-        <div role="status" className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-green/20 bg-brand-green/5 px-6 py-2.5">
+        <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-3 border-b border-primary/20 bg-primary/10 px-6 py-2.5"
+        >
             <div className="flex items-center gap-2.5 min-w-0">
-                <Icon name="info" className="text-[16px] text-brand-green shrink-0" />
-                <p className="text-sm text-white/70">
+                <Icon name="info" className="text-[16px] text-primary shrink-0" />
+                <p className="text-sm text-base-content/70">
                     {isRequested
                         ? "Your profile request has been sent — an editor will create it for you."
                         : "You don't have a profile yet. Ask an editor to create one for you."}
@@ -41,7 +44,7 @@ export default function NoProfileNotice({ alreadyRequested }: INoProfileNoticePr
             {!isRequested && (
                 <button
                     type="button"
-                    className="shrink-0 px-4 py-1.5 rounded-lg bg-brand-green text-brand-navy text-xs font-bold hover:brightness-90 transition-all disabled:opacity-50"
+                    className="btn btn-primary btn-sm shrink-0 disabled:opacity-50"
                     disabled={isPending}
                     onClick={requestProfile}
                 >

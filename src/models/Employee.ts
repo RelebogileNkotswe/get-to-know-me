@@ -18,12 +18,17 @@ export interface IEmployee {
     photoUrl: string | null;
 }
 
+/** Account-link status filter for the employee list. */
+export type EmployeeAccountStatus = "all" | "linked" | "pending";
+
 /** What the employee list is filtered by, and which page of it to show. An empty string means that filter is not used. */
 export interface IEmployeeFilter extends IPageRequest {
     /** Words to find in the name, preferred name, position or profile text. */
     search: string;
     /** ISO date (e.g. 2026-09-14): only people who started on or after it. */
     startedFrom: string;
+    /** Whether to show only profiles with a linked account, only those without, or all. */
+    status: EmployeeAccountStatus;
 }
 
 /** Results per page on the employee list until the person picks another size. */
@@ -32,15 +37,18 @@ export const EMPLOYEE_PAGE_SIZE = 20;
 export const emptyEmployeeFilter: IEmployeeFilter = {
     search: "",
     startedFrom: "",
+    status: "all",
     page: 1,
     pageSize: EMPLOYEE_PAGE_SIZE,
 };
 
 /** The employee list filter in the page address. */
 export function employeeFilterFromParams(params: SearchParams): IEmployeeFilter {
+    const status = ClientUtils.firstSearchParam(params.status);
     return {
         search: ClientUtils.firstSearchParam(params.search),
         startedFrom: ClientUtils.firstSearchParam(params.startedFrom),
+        status: status === "linked" || status === "pending" ? status : "all",
         page: ClientUtils.pageNumberFrom(ClientUtils.firstSearchParam(params.page)),
         pageSize: ClientUtils.pageSizeFrom(ClientUtils.firstSearchParam(params.pageSize), EMPLOYEE_PAGE_SIZE),
     };

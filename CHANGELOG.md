@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-10-20 - employee-status-filter
+
+### Added
+- Server-side employee account-status filter: "All / Linked / Pending" chips on the home page now filter the list in the database and show totals fetched from the server, so the counts are accurate across all pages, not just the current one. The active filter is stored in the URL.
+- `db:migrate:deploy` npm script for applying migrations without the shadow database (`prisma migrate deploy`), usable on databases where the user lacks `CREATEDB` permission.
+
+### Changed
+- `TypeScriptReactStandards.md` fully rewritten to reflect this project's actual stack (Next.js App Router, React 19, Tailwind CSS 4, daisyUI 5, Prisma 7) instead of the previous Neo/MobX guide.
+- Custom dark daisyUI brand theme applied globally; `AdminUsersView`, `EditorAccountsView`, `AuditLogView`, `InviteManager`, `ConfirmDialog`, `ActionNotice` and all toolbar components restyled to use daisyUI semantic classes (`btn`, `badge`, `select`, `alert`, `modal-action`) rather than repeated inline Tailwind.
+- All admin, editor, audit and invite tables use the two-wrapper pattern (`overflow-hidden` outer for rounded corners, `overflow-x-auto` inner for horizontal scroll) so the Actions column is not clipped on narrow screens.
+
+### Fixed
+- `<Pagination>` was missing from the admin Users and roles page; the list was stuck on page 1.
+- `aria-busy` and opacity-fade wrapper restored to `AdminUsersView` and `EditorAccountsView` so the table dims while a server filter reload is in progress.
+- Delete button in `EditorAccountsView` was missing `disabled={isDeleting}`, allowing a second click to fire the delete action while the first was still running.
+- `AppShell` content wrapper `bg-brand-navy` removed (redundant with the dark daisyUI theme); `bg-base-100` added to `<body>` in the root layout instead.
+- `InviteManager` generated-link panel changed from `<div>` to `<section>` so `aria-label` creates a proper landmark region.
+- `renderField` in `InviteManager` now connects `<label htmlFor>` to `<input id>` so clicking the label focuses the correct input.
+- `InviteManager` status comparisons changed from `"awaiting_review"` string literals to `ProfileStatus.AwaitingReview` enum members.
+- Brace-less `if` guards in `AdminUsersView` and `EditorAccountsView` now have curly braces.
+
 ## [0.11.0] - 2026-10-20 - FrontEndCommits
 
 ### Fixed

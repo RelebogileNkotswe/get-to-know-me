@@ -1,6 +1,7 @@
 import "server-only";
 import type {
     IAccountStatus,
+    IEmployeeListResult,
     IOwnProfileStatus,
     IProfileService,
     SaveProfileResult,
@@ -42,14 +43,21 @@ function employeeSearchConditions(search: string): Prisma.ProfileWhereInput[] {
     return conditions;
 }
 
-/** Published profiles that match the employee list filter; a start date that is not a valid ISO date is ignored. */
-function publishedEmployeeConditions(filter: IEmployeeFilter): Prisma.ProfileWhereInput {
+/**
+ * Published profiles that match the employee list filter. A start date that is not a valid ISO date is ignored.
+ * When `userEmails` is supplied and `filter.status` is not "all", the query is also filtered to profiles whose
+ * company email is (or is not) in that set.
+ */
+function publishedEmployeeConditions(filter: IEmployeeFilter, userEmails?: string[]): Prisma.ProfileWhereInput {
     const where: Prisma.ProfileWhereInput = {
         status: ProfileStatus.Published,
         AND: employeeSearchConditions(filter.search),
     };
     if (ClientUtils.isIsoDate(filter.startedFrom)) {
         where.startDate = { gte: ClientUtils.fromUtcIsoDate(filter.startedFrom) };
+    }
+    if (filter.status !== "all" && userEmails !== undefined) {
+        where.companyEmail = filter.status === "linked" ? { in: userEmails } : { notIn: userEmails };
     }
     return where;
 }
@@ -266,12 +274,24 @@ export const profileService: IProfileService = {
         return { items: accounts, page, pageSize: filter.pageSize, totalCount };
     },
 
-    async listPublishedEmployees(filter: IEmployeeFilter): Promise<IPage<IEmployee>> {
-        const where: Prisma.ProfileWhereInput = publishedEmployeeConditions(filter);
-        const totalCount: number = await db.profile.count({ where });
-        const page: number = ClientUtils.clampPage(filter.page, totalCount, filter.pageSize);
+    async listPublishedEmployees(filter: IEmployeeFilter): Promise<IEmployeeListResult> {
+        const userEmails: string[] = (await db.user.findMany({ select: { email: true } })).map(
+            (u: { email: string }) => u.email,
+        );
+        const where: Prisma.ProfileWhereInput = publishedEmployeeConditions(filter, userEmails);
+        const publishedWhere: Prisma.ProfileWhereInput = { status: ProfileStatus.Published };
+        const [filteredCount, linkedCount, totalPublishedCount] = await Promise.all([
+            db.profile.count({ where }),
+            db.profile.count({ where: { ...publishedWhere, companyEmail: { in: userEmails } } }),
+            db.profile.count({ where: publishedWhere }),
+        ]);
+        const page: number = ClientUtils.clampPage(filter.page, filteredCount, filter.pageSize);
         const items: IEmployee[] = await findEmployees(where, (page - 1) * filter.pageSize, filter.pageSize);
-        return { items, page, pageSize: filter.pageSize, totalCount };
+        return {
+            page: { items, page, pageSize: filter.pageSize, totalCount: filteredCount },
+            linkedCount,
+            pendingCount: totalPublishedCount - linkedCount,
+        };
     },
 
     async listNewStarters(filter: IEmployeeFilter): Promise<IEmployee[]> {
