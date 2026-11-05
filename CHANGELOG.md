@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-11-05 - singular-design
+
+### Changed
+- The app's look now follows the Singular website (singular.co.za): Montserrat, white and pale grey surfaces, near-black text, teal accents (`#81C5BD`, `#00A69B`), square-ish and flat. The light theme is now the default; the light/dark toggle still works.
+- The sidebar, sign-in page, employee cards, carousel, toggles, dialogs and invite icons use the theme colours. Cards have slightly rounded (8px) corners.
+- The profile page and A5 print page share one template, now in the Singular style with fixed colours, so it looks the same in light and dark mode and prints with less ink.
+
+### Fixed
+- The "Get to know me" box on employee cards had a teal border on all four sides; only the left edge is teal now.
+
+### Known gaps
+- The template no longer matches the navy and green mock design in the spec; confirm with the design owner.
+- The company logo is still text.
+## [0.13.0] - 2026-11-05 - singular-design
+
+### Changed
+- The app's look now follows the Singular website (singular.co.za): Montserrat, white and pale grey surfaces, near-black text, teal accents (`#81C5BD`, `#00A69B`), square-ish and flat. The light theme is now the default; the light/dark toggle still works.
+- The sidebar, sign-in page, employee cards, carousel, toggles, dialogs and invite icons use the theme colours. Cards have slightly rounded (8px) corners.
+- The profile page and A5 print page share one template, now in the Singular style with fixed colours, so it looks the same in light and dark mode and prints with less ink.
+
+### Fixed
+- The "Get to know me" box on employee cards had a teal border on all four sides; only the left edge is teal now.
+
+### Known gaps
+- The template no longer matches the navy and green mock design in the spec; confirm with the design owner.
+- The company logo is still text.
 ## [0.12.0] - 2026-10-20 - employee-status-filter
 
 ### Added

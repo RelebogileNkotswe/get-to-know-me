@@ -11,9 +11,9 @@ import Icon from "./Icon";
 import { mainLinks, profileLink, sectionLabels, sectionOrder, type ISideMenuLink } from "./SideMenuItems";
 
 const linkBase: string =
-    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green";
-const linkIdle: string = "text-white/75 hover:bg-white/10 hover:text-white";
-const linkActive: string = "bg-brand-green text-brand-navy";
+    "flex items-center gap-3 rounded-field px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+const linkIdle: string = "text-base-content/75 hover:bg-base-300 hover:text-base-content";
+const linkActive: string = "bg-primary text-primary-content";
 
 /**
  * Side navigation menu shown inside the root layout's drawer: the brand, links grouped under small headings, and the
@@ -60,7 +60,7 @@ export default function SideMenu() {
                     {item.label}
                     {item.showsReviewCount && reviewCount > 0 && (
                         <span
-                            className="bg-brand-green text-brand-navy ml-auto rounded-full px-2 py-0.5 text-xs font-bold"
+                            className="bg-primary text-primary-content ml-auto rounded-selector px-2 py-0.5 text-xs font-bold"
                             aria-label={`${reviewCount} waiting for review`}
                         >
                             {reviewCount}
@@ -73,13 +73,12 @@ export default function SideMenu() {
 
     return (
         <nav
-            data-theme="brand"
-            className="bg-brand-navy flex min-h-screen w-64 flex-col gap-6 p-4 text-white"
+            className="bg-base-200 text-base-content border-base-300 flex min-h-screen w-64 flex-col gap-6 border-r p-4"
             aria-label="Main navigation"
         >
-            <div className="px-3 pt-2">
+            <div className="border-primary border-l-4 px-3 py-1">
                 <p className="font-headline text-lg leading-tight font-bold">Singular</p>
-                <p className="font-headline text-brand-green text-xs font-semibold tracking-widest uppercase">
+                <p className="font-headline text-base-content/70 text-xs font-semibold tracking-widest uppercase">
                     Get to know me
                 </p>
             </div>
@@ -94,7 +93,7 @@ export default function SideMenu() {
                     }
                     return (
                         <div key={section}>
-                            <p className="px-3 pb-2 text-xs font-semibold tracking-wider text-white/45 uppercase">
+                            <p className="text-base-content/60 px-3 pb-2 text-xs font-semibold tracking-wider uppercase">
                                 {sectionLabels[section]}
                             </p>
                             <ul className="flex flex-col gap-1">{links.map(renderLink)}</ul>
@@ -103,11 +102,11 @@ export default function SideMenu() {
                 })}
             </div>
 
-            <div className="mt-auto flex flex-col gap-2 border-t border-white/10 pt-4">
+            <div className="border-base-300 mt-auto flex flex-col gap-2 border-t pt-4">
                 {user && (
                     <div className="flex items-center gap-3 px-3 pb-2">
                         <div
-                            className="bg-brand-green text-brand-navy flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                            className="bg-primary text-primary-content flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
                             aria-hidden="true"
                         >
                             {user.email.charAt(0).toUpperCase()}
@@ -116,7 +115,7 @@ export default function SideMenu() {
                             <p className="truncate text-sm font-semibold" title={user.email}>
                                 {user.email}
                             </p>
-                            <p className="text-brand-green text-xs">{roleLabels[user.role]}</p>
+                            <p className="text-base-content/70 text-xs">{roleLabels[user.role]}</p>
                         </div>
                     </div>
                 )}

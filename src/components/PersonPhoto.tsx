@@ -22,7 +22,7 @@ export default function PersonPhoto({ name, photoUrl, className, initialsClassNa
     }
     return (
         <div
-            className={`${className} bg-brand-navy border border-brand-green/20 text-brand-green flex items-center justify-center font-semibold ${initialsClassName}`}
+            className={`${className} bg-secondary text-secondary-content border border-base-300 flex items-center justify-center font-semibold ${initialsClassName}`}
             aria-hidden="true"
         >
             {ClientUtils.getInitials(name)}
