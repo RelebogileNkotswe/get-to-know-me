@@ -15,7 +15,7 @@ interface IEmployeeCardProps {
  */
 export default function EmployeeCard({ employee, showLinkStatus }: IEmployeeCardProps) {
     return (
-        <div className="bg-base-200 border border-base-300 rounded-2xl flex flex-col hover:border-primary/30 hover:shadow-lg transition-all duration-200">
+        <div className="bg-base-200 border-base-300 hover:border-primary flex flex-col rounded-lg border transition-colors duration-200">
             <div className="p-5 flex flex-col gap-4 flex-1">
                 <div className="flex items-start justify-between gap-2">
                     <PersonPhoto
@@ -45,13 +45,15 @@ export default function EmployeeCard({ employee, showLinkStatus }: IEmployeeCard
                     )}
                 </div>
 
-                {/* This section intentionally stays dark in both themes — it is part of the brand design. */}
                 {employee.hobbies && (
-                    <div className="bg-brand-navy rounded-xl p-3 border border-white/5">
-                        <p className="text-[9px] font-bold tracking-widest uppercase text-brand-green/70 mb-1.5">
+                    <div className="bg-base-100 border-base-300 border-l-primary mt-auto rounded-lg border border-l-4 p-3">
+                        <p className="text-base-content/60 mb-1.5 text-[10px] font-bold tracking-widest uppercase">
                             Get to know me
                         </p>
-                        <p className="line-clamp-3 text-sm text-white/70 italic leading-relaxed">{employee.hobbies}</p>
+                        {/* Always two lines tall, so every card's box is the same size and the buttons line up. */}
+                        <p className="text-base-content/80 line-clamp-2 h-[2lh] text-sm leading-relaxed italic">
+                            {employee.hobbies}
+                        </p>
                     </div>
                 )}
             </div>
@@ -59,7 +61,7 @@ export default function EmployeeCard({ employee, showLinkStatus }: IEmployeeCard
             <div className="px-5 pb-4">
                 <Link
                     href={`/employees/${employee.id}`}
-                    className="btn btn-ghost btn-sm w-full rounded-xl hover:bg-brand-green hover:text-brand-navy hover:border-brand-green transition-all duration-150"
+                    className="btn btn-ghost btn-sm hover:bg-primary hover:text-primary-content hover:border-primary w-full transition-all duration-150"
                     aria-label={`View profile for ${employee.name}`}
                 >
                     <Icon name="visibility" />

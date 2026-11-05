@@ -24,13 +24,13 @@ function StarterCard({ employee, isCopy }: IStarterCardProps) {
     return (
         <Link
             href={`/employees/${employee.id}`}
-            className="bg-base-200 border border-base-300 rounded-xl w-56 shrink-0 hover:border-primary/30 transition-colors"
+            className="bg-base-200 border border-base-300 rounded-lg w-56 shrink-0 hover:border-primary transition-colors"
             tabIndex={isCopy ? -1 : undefined}
         >
             <div className="flex flex-col items-center gap-2 p-4 text-center">
                 <div className="relative">
                     <PersonPhoto name={employee.name} photoUrl={employee.photoUrl} className="size-16 rounded-full" />
-                    <span className="absolute -right-2 -bottom-1 px-1.5 py-0.5 rounded-full bg-brand-green text-brand-navy text-[10px] font-bold">
+                    <span className="absolute -right-2 -bottom-1 px-1.5 py-0.5 rounded-selector bg-primary text-primary-content text-[10px] font-bold">
                         New
                     </span>
                 </div>

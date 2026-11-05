@@ -1,68 +1,85 @@
 @import "tailwindcss";
-@plugin "daisyui";
-
-/* ─── Dark brand theme ────────────────────────────────────────────────────────
-   Exact hex values so #0b1b30 stays pure navy (oklch approximations were
-   introducing a grey shift). base-200 = card backgrounds; base-100 = page bg. */
-@plugin "daisyui/theme" {
-    name: "brand";
-    default: true;
-    color-scheme: dark;
-    --color-base-100: #0b1b30;
-    --color-base-200: #132a47;
-    --color-base-300: #1a3558;
-    --color-base-content: #ffffff;
-    --color-primary: #09fd9d;
-    --color-primary-content: #0b1b30;
-    --color-secondary: #1a3558;
-    --color-secondary-content: #a0b4c8;
-    --color-accent: #09fd9d;
-    --color-accent-content: #0b1b30;
-    --color-neutral: #253c52;
-    --color-neutral-content: #a0b4c8;
-    --color-info: #60a5fa;
-    --color-info-content: #000000;
-    --color-success: #09fd9d;
-    --color-success-content: #0b1b30;
-    --color-warning: #fbbf24;
-    --color-warning-content: #000000;
-    --color-error: #f87171;
-    --color-error-content: #000000;
+@plugin "daisyui" {
+    themes: false;
 }
 
-/* ─── Light brand theme ───────────────────────────────────────────────────────
-   Warm off-white page, pure white cards, dark navy text.
-   primary = #57bc79 (green on white); sidebar always overrides with data-theme="brand". */
+/* ─── Singular website style ──────────────────────────────────────────────────
+   Taken from singular.co.za: Montserrat, white and pale grey surfaces, black text, a teal-green accent (#81c5bd)
+   with a stronger teal (#00a69b), square corners and a flat look (no shadows or texture).
+   Text on the stronger teal is near-black, because white on #00a69b is too faint to read comfortably. */
+
+/* ─── Light theme (default) ───────────────────────────────────────────────────
+   Pure white page, pale grey (#edf0f1) panels and sidebar. */
 @plugin "daisyui/theme" {
     name: "brand-light";
-    default: false;
+    default: true;
     color-scheme: light;
-    --color-base-100: #f0efe9;
-    --color-base-200: #ffffff;
-    --color-base-300: #e4e3dc;
-    --color-base-content: #0b1b30;
-    --color-primary: #57bc79;
-    --color-primary-content: #ffffff;
-    --color-secondary: #e0f0ea;
-    --color-secondary-content: #0b1b30;
-    --color-accent: #57bc79;
-    --color-accent-content: #ffffff;
-    --color-neutral: #0b1b30;
+    --color-base-100: #ffffff;
+    --color-base-200: #edf0f1;
+    --color-base-300: #d5dbdd;
+    --color-base-content: #0e0e0e;
+    --color-primary: #00a69b;
+    --color-primary-content: #0e0e0e;
+    --color-secondary: #81c5bd;
+    --color-secondary-content: #0e0e0e;
+    --color-accent: #81c5bd;
+    --color-accent-content: #0e0e0e;
+    --color-neutral: #0e0e0e;
     --color-neutral-content: #ffffff;
-    --color-info: #3b82f6;
+    --color-info: #0077b6;
     --color-info-content: #ffffff;
-    --color-success: #57bc79;
-    --color-success-content: #ffffff;
-    --color-warning: #f59e0b;
-    --color-warning-content: #000000;
-    --color-error: #ef4444;
+    --color-success: #00a69b;
+    --color-success-content: #0e0e0e;
+    --color-warning: #f5a623;
+    --color-warning-content: #0e0e0e;
+    --color-error: #c93c37;
     --color-error-content: #ffffff;
+    --radius-selector: 0rem;
+    --radius-field: 0rem;
+    --radius-box: 0rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
 }
 
-/* ─── Brand colour tokens (Tailwind utilities) ────────────────────────────────
-   bg-brand-navy / text-brand-green etc. always refer to these fixed values
-   regardless of the active theme — use them only on elements that are always dark
-   (sidebar, employee card dark section, status chips). */
+/* ─── Dark theme ──────────────────────────────────────────────────────────────
+   Near-black and charcoal surfaces with the same teal. Chosen with the toggle in the top bar. */
+@plugin "daisyui/theme" {
+    name: "brand";
+    default: false;
+    color-scheme: dark;
+    --color-base-100: #0e0e0e;
+    --color-base-200: #1a1a1a;
+    --color-base-300: #2c2c2c;
+    --color-base-content: #f6f6f6;
+    --color-primary: #00a69b;
+    --color-primary-content: #0e0e0e;
+    --color-secondary: #3e3e3e;
+    --color-secondary-content: #f6f6f6;
+    --color-accent: #81c5bd;
+    --color-accent-content: #0e0e0e;
+    --color-neutral: #272727;
+    --color-neutral-content: #f6f6f6;
+    --color-info: #4db3e6;
+    --color-info-content: #0e0e0e;
+    --color-success: #00a69b;
+    --color-success-content: #0e0e0e;
+    --color-warning: #f5a623;
+    --color-warning-content: #0e0e0e;
+    --color-error: #f07167;
+    --color-error-content: #0e0e0e;
+    --radius-selector: 0rem;
+    --radius-field: 0rem;
+    --radius-box: 0rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+/* ─── Mock-design colour tokens (Tailwind utilities) ──────────────────────────
+   bg-brand-navy / text-brand-green etc. are the navy and green of the Get To Know Me mock design that the spec says
+   the profile template must follow. They are fixed whatever the theme, so use them only for the template and print page;
+   the rest of the app uses the theme colours above (bg-primary, bg-base-200, ...). */
 @theme {
     --color-brand-navy: #0b1b30;
     --color-brand-navy-light: #132a47;
@@ -82,8 +99,19 @@
     --color-error: #f87171;
     --color-error-container: #7f1d1d;
 
-    /* Poppins is loaded by next/font; next/font sets --font-poppins on <html>. */
-    --font-headline: var(--font-poppins);
+    /* Montserrat, as on singular.co.za, is loaded by next/font; next/font sets --font-montserrat on <html>. */
+    --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+    --font-headline: var(--font-montserrat);
+}
+
+/* Headings are slightly letter-spaced on the Singular website. */
+@layer base {
+    h1,
+    h2,
+    h3,
+    h4 {
+        letter-spacing: 0.02em;
+    }
 }
 
 /* ─── PDF export ──────────────────────────────────────────────────────────── */
