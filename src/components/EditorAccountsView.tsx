@@ -140,7 +140,7 @@ export default function EditorAccountsView({ accounts, filter }: IEditorAccounts
                                                             account.profileStatus === ProfileStatus.Published ||
                                                             account.profileStatus === null ? (
                                                                 <span className="badge badge-success badge-sm">
-                                                                    Has profile
+                                                                    Profile
                                                                 </span>
                                                             ) : (
                                                                 <span className="badge badge-warning badge-sm">
@@ -161,7 +161,7 @@ export default function EditorAccountsView({ accounts, filter }: IEditorAccounts
                                                     {account.hasAccount ? (
                                                         <span className="badge badge-success badge-sm">Linked</span>
                                                     ) : (
-                                                        <span className="badge badge-warning badge-sm">Not linked</span>
+                                                        <span className="badge badge-ghost badge-sm">Pending</span>
                                                     )}
                                                 </td>
                                                 <td className="px-5 py-3">

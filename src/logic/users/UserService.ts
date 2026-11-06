@@ -130,4 +130,57 @@ export const userService: IUserService = {
             return { ok: true };
         });
     },
+
+    async lockUser(actor: AuditActor, userId: string): Promise<UserActionResult> {
+        if (!ClientUtils.isUuid(userId)) {
+            return { ok: false, error: "That user no longer exists." };
+        }
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<UserActionResult> => {
+            const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, lockedAt: true } });
+            if (!user) {
+                return { ok: false, error: "That user no longer exists." };
+            }
+            await tx.user.update({ where: { id: userId }, data: { lockedAt: new Date() } });
+            // Locking an already-locked account is not worth recording.
+            if (user.lockedAt === null) {
+                await recordAuditEvent(tx, {
+                    action: AuditAction.AccountLocked,
+                    actor,
+                    targetId: userId,
+                    targetEmail: user.email,
+                });
+            }
+            return { ok: true };
+        });
+    },
+
+    async deleteUser(actor: AuditActor, userId: string): Promise<UserActionResult> {
+        if (!ClientUtils.isUuid(userId)) {
+            return { ok: false, error: "That user no longer exists." };
+        }
+        if (actor.type === AuditActorType.User && actor.userId === userId) {
+            return { ok: false, error: "You cannot delete your own account." };
+        }
+        return db.$transaction(async (tx: Prisma.TransactionClient): Promise<UserActionResult> => {
+            const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, role: true } });
+            if (!user) {
+                return { ok: false, error: "That user no longer exists." };
+            }
+            if (user.role === UserRole.Admin) {
+                const adminCount: number = await tx.user.count({ where: { role: UserRole.Admin } });
+                if (adminCount <= 1) {
+                    return { ok: false, error: "There must always be at least one admin." };
+                }
+            }
+            // Record the audit event before deleting so the user id still resolves within the transaction.
+            await recordAuditEvent(tx, {
+                action: AuditAction.AccountDeleted,
+                actor,
+                targetId: userId,
+                targetEmail: user.email,
+            });
+            await tx.user.delete({ where: { id: userId } });
+            return { ok: true };
+        });
+    },
 };
