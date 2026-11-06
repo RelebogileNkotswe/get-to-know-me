@@ -23,4 +23,13 @@ export interface IUserService {
 
     /** Unlocks an account and resets its failed sign-in attempts. Unlocking a locked account is recorded in the audit log. */
     unlockUser(actor: AuditActor, userId: string): Promise<UserActionResult>;
+
+    /** Locks an account so the user cannot sign in. Locking a previously unlocked account is recorded in the audit log. */
+    lockUser(actor: AuditActor, userId: string): Promise<UserActionResult>;
+
+    /**
+     * Deletes a user account and all its sessions. The linked profile is kept. Refuses to delete the actor's own account
+     * or the last admin. Recorded in the audit log.
+     */
+    deleteUser(actor: AuditActor, userId: string): Promise<UserActionResult>;
 }

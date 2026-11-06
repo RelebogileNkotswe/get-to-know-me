@@ -62,7 +62,7 @@ export default function EmployeeToolbar({
             >
                 <button
                     type="button"
-                    className={`p-2 transition-colors ${view === "list" ? "bg-brand-green text-brand-navy" : "bg-base-100 text-base-content/50 hover:text-base-content"}`}
+                    className={`p-2 transition-colors ${view === "list" ? "bg-primary text-primary-content" : "bg-base-100 text-base-content/50 hover:text-base-content"}`}
                     aria-label="List view"
                     aria-pressed={view === "list"}
                     onClick={() => onViewChange("list")}
@@ -71,7 +71,7 @@ export default function EmployeeToolbar({
                 </button>
                 <button
                     type="button"
-                    className={`p-2 transition-colors ${view === "card" ? "bg-brand-green text-brand-navy" : "bg-base-100 text-base-content/50 hover:text-base-content"}`}
+                    className={`p-2 transition-colors ${view === "card" ? "bg-primary text-primary-content" : "bg-base-100 text-base-content/50 hover:text-base-content"}`}
                     aria-label="Card view"
                     aria-pressed={view === "card"}
                     onClick={() => onViewChange("card")}

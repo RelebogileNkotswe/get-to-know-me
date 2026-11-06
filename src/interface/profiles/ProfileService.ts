@@ -12,6 +12,8 @@ export type SaveProfileResult = { ok: true; profileId: string } | { ok: false; e
 export interface IAccountStatus {
     hasAccount: boolean;
     isLocked: boolean;
+    /** The user's id when they have an account; needed to pass to account management actions. */
+    userId?: string;
 }
 
 /** Whether a signed-in user has a profile, and if not, whether they have already asked for one. */
