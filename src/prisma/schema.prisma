@@ -120,6 +120,7 @@ enum AuditAction {
   role_changed
   account_unlocked
   account_locked
+  account_deleted
   profile_created
   profile_updated
   profile_published

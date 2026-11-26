@@ -14,11 +14,12 @@ interface IEmployeeProfileViewProps {
 
 /**
  * A published profile in the Get To Know Me template. Editors and admins also see the edit and PDF export actions.
+ * The actions stay in place at the top while the template scrolls beneath them.
  */
 export default function EmployeeProfileView({ profileId, profile, canEdit, photoUrl }: IEmployeeProfileViewProps) {
     return (
-        <div className="flex flex-col gap-4 p-6">
-            <div className="mx-auto flex w-full max-w-xl flex-wrap items-center justify-between gap-2">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+            <div className="mx-auto flex w-full max-w-xl shrink-0 flex-wrap items-center justify-between gap-2">
                 <Link href="/" className="btn btn-ghost btn-sm">
                     <Icon name="arrow_back" />
                     Back to directory
@@ -37,7 +38,9 @@ export default function EmployeeProfileView({ profileId, profile, canEdit, photo
                 )}
             </div>
 
-            <ProfileTemplate profile={profile} photoUrl={photoUrl} />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+                <ProfileTemplate profile={profile} photoUrl={photoUrl} />
+            </div>
         </div>
     );
 }

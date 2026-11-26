@@ -38,3 +38,28 @@ export async function unlockUserAction(userId: string): Promise<UserActionResult
     }
     return result;
 }
+
+export async function lockUserAction(userId: string): Promise<UserActionResult> {
+    const admin = await currentUserWithRole(UserRole.Admin);
+    if (!admin) {
+        return NOT_ALLOWED;
+    }
+    const result = await userService.lockUser(userActor(admin), userId);
+    if (result.ok) {
+        revalidatePath("/admin");
+    }
+    return result;
+}
+
+export async function deleteUserAction(userId: string): Promise<UserActionResult> {
+    const admin = await currentUserWithRole(UserRole.Admin);
+    if (!admin) {
+        return NOT_ALLOWED;
+    }
+    const result = await userService.deleteUser(userActor(admin), userId);
+    if (result.ok) {
+        revalidatePath("/admin");
+        revalidatePath("/editor");
+    }
+    return result;
+}

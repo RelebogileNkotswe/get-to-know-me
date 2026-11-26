@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { deleteUserAction, lockUserAction, unlockUserAction } from "../app/admin/actions";
 import { deleteProfileAction, publishProfileAction } from "../app/editor/profiles/actions";
 import type { IAccountStatus } from "../interface/profiles/ProfileService";
 import type { IProfileFormValues } from "../models/ProfileForm";
@@ -44,6 +45,7 @@ export default function EditProfileView({
     const [pending, setPending] = useState<PendingAction | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [status, setStatus] = useState<ProfileStatus>(initialStatus);
+    const [isAccountActionRunning, setIsAccountActionRunning] = useState<boolean>(false);
     const [isPublishing, startPublishing] = useTransition();
 
     const name: string = `${profile.firstName} ${profile.lastName}`.trim();
@@ -60,10 +62,43 @@ export default function EditProfileView({
         });
     }
 
-    // TODO: unlock, block and delete account only change the state on this page until the account API exists.
-    function unlockAccount(): void {
-        setAccount((current: IAccountStatus) => ({ ...current, isLocked: false }));
-        setNotice(`Unlocked the account for ${name}.`);
+    async function unlockAccount(): Promise<void> {
+        if (!account.userId) return;
+        setIsAccountActionRunning(true);
+        const result = await unlockUserAction(account.userId);
+        setIsAccountActionRunning(false);
+        if (result.ok) {
+            setAccount((current: IAccountStatus) => ({ ...current, isLocked: false }));
+            setNotice(`Unlocked the account for ${name}.`);
+        } else {
+            setNotice(`Could not unlock the account for ${name}. ${result.error}`);
+        }
+    }
+
+    async function blockAccount(): Promise<void> {
+        if (!account.userId) return;
+        setIsAccountActionRunning(true);
+        const result = await lockUserAction(account.userId);
+        setIsAccountActionRunning(false);
+        if (result.ok) {
+            setAccount((current: IAccountStatus) => ({ ...current, isLocked: true }));
+            setNotice(`Blocked the account for ${name}.`);
+        } else {
+            setNotice(`Could not block the account for ${name}. ${result.error}`);
+        }
+    }
+
+    async function deleteAccount(): Promise<void> {
+        if (!account.userId) return;
+        setIsAccountActionRunning(true);
+        const result = await deleteUserAction(account.userId);
+        setIsAccountActionRunning(false);
+        if (result.ok) {
+            setAccount({ hasAccount: false, isLocked: false, userId: undefined });
+            setNotice(`Deleted the user account for ${name}.`);
+        } else {
+            setNotice(`Could not delete the account for ${name}. ${result.error}`);
+        }
     }
 
     async function deleteProfile(): Promise<void> {
@@ -79,16 +114,11 @@ export default function EditProfileView({
     }
 
     function confirmPendingAction(): void {
-        if (pending === "block") {
-            setAccount((current: IAccountStatus) => ({ ...current, isLocked: true }));
-            setNotice(`Blocked the account for ${name}.`);
-        } else if (pending === "delete-account") {
-            setAccount({ hasAccount: false, isLocked: false });
-            setNotice(`Deleted the user account for ${name}.`);
-        } else if (pending === "delete-profile") {
-            void deleteProfile();
-        }
+        const action = pending;
         setPending(null);
+        if (action === "block") void blockAccount();
+        else if (action === "delete-account") void deleteAccount();
+        else if (action === "delete-profile") void deleteProfile();
     }
 
     function dialogTitle(): string {
@@ -133,7 +163,7 @@ export default function EditProfileView({
                 {!isProfileDeleted && (
                     <div className="flex flex-wrap items-center gap-2">
                         <span
-                            className={`badge ${status === ProfileStatus.Published ? "badge-success" : "badge-warning"}`}
+                            className={`btn btn-sm no-animation pointer-events-none select-none ${status === ProfileStatus.Published ? "btn-success" : "btn-warning"}`}
                         >
                             {profileStatusLabels[status]}
                         </span>
@@ -149,12 +179,19 @@ export default function EditProfileView({
                             </button>
                         )}
                         {account.hasAccount && (
-                            <span className={`badge ${account.isLocked ? "badge-error" : "badge-success"}`}>
+                            <span
+                                className={`btn btn-sm no-animation pointer-events-none select-none ${account.isLocked ? "btn-error" : "btn-success"}`}
+                            >
                                 Account {account.isLocked ? "locked" : "active"}
                             </span>
                         )}
                         {canManageAccount && account.hasAccount && account.isLocked && (
-                            <button type="button" className="btn btn-outline btn-sm" onClick={unlockAccount}>
+                            <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                disabled={isAccountActionRunning}
+                                onClick={() => void unlockAccount()}
+                            >
                                 <Icon name="lock_open" />
                                 Unlock
                             </button>
@@ -163,6 +200,7 @@ export default function EditProfileView({
                             <button
                                 type="button"
                                 className="btn btn-outline btn-sm"
+                                disabled={isAccountActionRunning}
                                 onClick={() => setPending("block")}
                             >
                                 <Icon name="block" />
@@ -173,6 +211,7 @@ export default function EditProfileView({
                             <button
                                 type="button"
                                 className="btn btn-outline btn-error btn-sm"
+                                disabled={isAccountActionRunning}
                                 onClick={() => setPending("delete-account")}
                             >
                                 <Icon name="person_remove" />

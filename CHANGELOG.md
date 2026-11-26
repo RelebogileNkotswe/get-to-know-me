@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-11-06 - feature/account-management-api
+
+### Added
+- Block and delete account server actions: the Block, Unlock and Delete account buttons on the edit profile page now call real server actions instead of updating local state only. All three operations are recorded in the audit log (`account_locked`, `account_unlocked`, `account_deleted`).
+- `lockUser` and `deleteUser` added to `IUserService` and the logic implementation. `deleteUser` refuses to delete the actor's own account or the last admin, and `lockUser` refuses to lock the actor's own account or the last admin who can still sign in.
+- `account_deleted` added to the `AuditAction` enum (Prisma schema + migration).
+
+### Changed
+- Editor list profile badge shortened from "Has profile" to "Profile" and account badge changed from "Not linked" (orange) to "Pending" (grey) to better reflect that an unlinked account is a normal state.
+- Status indicators ("Published", "Account active/locked") on the edit profile page resized to match the height of the action buttons on the same row.
+
+### Fixed
+- The employee profile page (`/employees/{id}`) now scrolls: the profile template scrolls under the Back, Export and Edit buttons, which stay at the top. Long profiles were cut off at the bottom of the screen.
+
 ## [0.13.0] - 2026-11-05 - singular-design
 
 ### Changed

@@ -180,7 +180,7 @@ export const profileService: IProfileService = {
     async getAccountStatus(profileId: string): Promise<IAccountStatus> {
         const profile = await findProfile(profileId);
         const user = profile ? await db.user.findUnique({ where: { email: profile.companyEmail } }) : null;
-        return { hasAccount: user !== null, isLocked: user?.lockedAt != null };
+        return { hasAccount: user !== null, isLocked: user?.lockedAt != null, userId: user?.id };
     },
 
     async listEditorAccounts(filter: IEditorAccountFilter): Promise<IPage<IEditorAccount>> {
