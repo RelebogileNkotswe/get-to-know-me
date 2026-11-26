@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 
 ### Added
 - Block and delete account server actions: the Block, Unlock and Delete account buttons on the edit profile page now call real server actions instead of updating local state only. All three operations are recorded in the audit log (`account_locked`, `account_unlocked`, `account_deleted`).
-- `lockUser` and `deleteUser` added to `IUserService` and the logic implementation. `deleteUser` refuses to delete the actor's own account or the last admin.
+- `lockUser` and `deleteUser` added to `IUserService` and the logic implementation. `deleteUser` refuses to delete the actor's own account or the last admin, and `lockUser` refuses to lock the actor's own account or the last admin who can still sign in.
 - `account_deleted` added to the `AuditAction` enum (Prisma schema + migration).
 
 ### Changed

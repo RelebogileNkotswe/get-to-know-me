@@ -135,10 +135,24 @@ export const userService: IUserService = {
         if (!ClientUtils.isUuid(userId)) {
             return { ok: false, error: "That user no longer exists." };
         }
+        if (actor.type === AuditActorType.User && actor.userId === userId) {
+            return { ok: false, error: "You cannot lock your own account." };
+        }
         return db.$transaction(async (tx: Prisma.TransactionClient): Promise<UserActionResult> => {
-            const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, lockedAt: true } });
+            const user = await tx.user.findUnique({
+                where: { id: userId },
+                select: { email: true, role: true, lockedAt: true },
+            });
             if (!user) {
                 return { ok: false, error: "That user no longer exists." };
+            }
+            if (user.role === UserRole.Admin && user.lockedAt === null) {
+                const unlockedAdminCount: number = await tx.user.count({
+                    where: { role: UserRole.Admin, lockedAt: null },
+                });
+                if (unlockedAdminCount <= 1) {
+                    return { ok: false, error: "There must always be at least one admin who can sign in." };
+                }
             }
             await tx.user.update({ where: { id: userId }, data: { lockedAt: new Date() } });
             // Locking an already-locked account is not worth recording.
