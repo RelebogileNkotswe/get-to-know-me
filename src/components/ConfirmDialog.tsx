@@ -35,7 +35,7 @@ export default function ConfirmDialog({
 
     return (
         <dialog ref={dialogRef} className="modal" onClose={onCancel}>
-            <div className="modal-box bg-brand-navy-light border border-white/10">
+            <div className="modal-box border-base-300 border">
                 <h3 className="text-lg font-bold">{title}</h3>
                 <p className="py-4 text-sm text-base-content/70">{message}</p>
                 <div className="modal-action">

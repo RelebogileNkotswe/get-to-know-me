@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Poppins } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import AppShell from "../components/AppShell";
 import CurrentUserProvider from "../components/CurrentUserProvider";
 import { authService } from "../logic/auth/AuthService";
@@ -7,20 +7,10 @@ import { profileService } from "../logic/profiles/ProfileService";
 import { hasRoleAtLeast, UserRole } from "../models/UserRole";
 import "./globals.css";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const montserrat = Montserrat({
+    variable: "--font-montserrat",
     subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-    variable: "--font-geist-mono",
-    subsets: ["latin"],
-});
-
-const poppins = Poppins({
-    variable: "--font-poppins",
-    subsets: ["latin"],
-    weight: ["600", "700"],
+    weight: ["400", "500", "600", "700"],
     display: "swap",
 });
 
@@ -35,15 +25,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         user && hasRoleAtLeast(user.role, UserRole.Editor) ? await profileService.countAwaitingReview() : 0;
 
     return (
-        <html
-            lang="en"
-            className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} h-full antialiased`}
-        >
+        <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
             <head>
-                {/* Apply saved theme before React hydrates to prevent a flash of the wrong theme. */}
+                {/* The light theme is the default; apply a saved dark choice before React hydrates to prevent a flash. */}
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){var t=localStorage.getItem('gtkm-theme');if(t==='brand-light')document.documentElement.dataset.theme='brand-light';})();`,
+                        __html: `(function(){var t=localStorage.getItem('gtkm-theme');if(t==='brand')document.documentElement.dataset.theme='brand';})();`,
                     }}
                 />
                 {/* Root layout in the App Router applies to every page; Material Symbols is not offered by next/font. */}

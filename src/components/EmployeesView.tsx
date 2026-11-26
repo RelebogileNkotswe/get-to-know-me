@@ -95,7 +95,7 @@ export default function EmployeesView({
                     )}
 
                     {items.length === 0 && (
-                        <p className="text-sm text-outline py-10 text-center">No employees match.</p>
+                        <p className="text-base-content/60 py-10 text-center text-sm">No employees match.</p>
                     )}
                     {items.length > 0 && view === "list" && (
                         <div className="bg-base-200 border border-base-300 rounded-xl overflow-hidden">

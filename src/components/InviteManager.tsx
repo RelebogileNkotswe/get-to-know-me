@@ -164,7 +164,7 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
 
             <div className="bg-base-200 border border-base-300 rounded-2xl overflow-hidden max-w-3xl">
                 <div className="px-6 py-4 border-b border-base-300 flex items-center gap-3">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-brand-green/15 text-brand-green">
+                    <span className="bg-primary/15 text-base-content rounded-field flex size-8 items-center justify-center">
                         <Icon name="person_add" />
                     </span>
                     <h2 className="font-semibold text-base-content">New invite</h2>
@@ -205,7 +205,7 @@ export default function InviteManager({ pendingInvites }: IInviteManagerProps) {
                     aria-label="Invite link"
                 >
                     <div className="flex items-center gap-3 mb-3">
-                        <span className="flex size-8 items-center justify-center rounded-lg bg-brand-green/15 text-brand-green">
+                        <span className="bg-primary/15 text-base-content rounded-field flex size-8 items-center justify-center">
                             <Icon name="link" />
                         </span>
                         <h2 className="font-semibold text-base-content">Link for {shownLink.name}</h2>

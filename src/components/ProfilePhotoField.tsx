@@ -113,7 +113,7 @@ export default function ProfilePhotoField({ onChange, error, currentPhotoUrl }: 
             <legend className="fieldset-legend">Employee photo</legend>
             <div className="flex items-center gap-4">
                 {shownPhotoUrl && (
-                    <div className="aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-xl border-2 border-white/80 shadow">
+                    <div className="aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-box border-2 border-base-300">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={shownPhotoUrl}

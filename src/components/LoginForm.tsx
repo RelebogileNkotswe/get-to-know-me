@@ -14,30 +14,25 @@ export default function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
-        <div className="min-h-screen w-full bg-surface flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-surface-container border border-outline-variant/40 rounded-xl p-8 flex flex-col gap-5 shadow-lg">
+        <div className="bg-base-200 flex min-h-screen w-full flex-col items-center justify-center p-4">
+            <div className="bg-base-100 border-base-300 border-t-primary rounded-box flex w-full max-w-sm flex-col gap-5 border border-t-4 p-8">
                 <div className="flex flex-col items-center gap-0.5 pb-2">
                     <img
                         alt="Singular Systems"
-                        className="h-10 w-auto object-contain mb-2"
+                        className="mb-2 h-10 w-auto object-contain"
                         src={SINGULAR_LOGO}
                         onError={(e) => {
                             (e.target as HTMLImageElement).style.display = "none";
                         }}
                     />
-                    <span className="font-headline text-xl font-bold text-white tracking-tight leading-none">
-                        Singular
-                    </span>
-                    <span className="text-[11px] font-bold text-brand-green uppercase tracking-wide mt-0.5">
+                    <span className="font-headline text-xl leading-none font-bold tracking-tight">Singular</span>
+                    <span className="text-base-content/70 mt-0.5 text-[11px] font-bold tracking-wide uppercase">
                         Get To Know Me
                     </span>
                 </div>
 
-                <button
-                    type="button"
-                    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-surface-container-high border border-outline-variant/40 text-on-surface text-sm font-semibold hover:border-brand-green/50 hover:bg-surface-container transition-colors cursor-pointer"
-                >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                <button type="button" className="btn btn-outline w-full gap-3">
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 21 21">
                         <rect x="1" y="1" width="9" height="9" fill="#f25022" />
                         <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
                         <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
@@ -46,48 +41,48 @@ export default function LoginForm() {
                     <span>Continue with Microsoft Outlook</span>
                 </button>
 
-                <div className="flex items-center gap-3 text-xs text-outline">
-                    <div className="flex-1 h-px bg-outline-variant/40" />
+                <div className="text-base-content/60 flex items-center gap-3 text-xs">
+                    <div className="bg-base-300 h-px flex-1" />
                     <span>or use corporate credentials</span>
-                    <div className="flex-1 h-px bg-outline-variant/40" />
+                    <div className="bg-base-300 h-px flex-1" />
                 </div>
 
                 {state.error && (
-                    <div
-                        role="alert"
-                        className="p-3 rounded-lg bg-error-container/20 border border-error/30 flex items-start gap-2 text-xs text-error"
-                    >
-                        <Icon name="error" className="text-[16px] shrink-0 mt-0.5" />
+                    <div role="alert" className="alert alert-error alert-soft items-start text-xs">
+                        <Icon name="error" className="mt-0.5 shrink-0 text-[16px]" />
                         <span className="leading-relaxed">{state.error}</span>
                     </div>
                 )}
 
                 <form action={formAction} className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-on-surface flex items-center justify-between">
+                        <label htmlFor="login-email" className="flex items-center justify-between text-xs font-semibold">
                             <span>Company Email</span>
-                            <span className="text-[11px] text-brand-green flex items-center gap-1">
+                            <span className="text-base-content/70 flex items-center gap-1 text-[11px] font-normal">
                                 <Icon name="verified" className="text-[13px]" />
                                 @singular.co.za
                             </span>
                         </label>
                         <div className="relative flex items-center">
-                            <Icon name="mail" className="text-[16px] text-outline absolute left-3" />
+                            <Icon name="mail" className="text-base-content/50 absolute left-3 z-10 text-[16px]" />
                             <input
+                                id="login-email"
                                 type="email"
                                 name="email"
                                 required
                                 autoComplete="username"
                                 defaultValue={state.email}
                                 placeholder="name@singular.co.za"
-                                className="w-full bg-surface-container-high border border-outline-variant/40 pl-9 pr-4 py-2.5 rounded-lg text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-brand-green transition-colors"
+                                className="input w-full pl-9"
                             />
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs font-semibold text-on-surface">Password</label>
+                            <label htmlFor="login-password" className="text-xs font-semibold">
+                                Password
+                            </label>
                             <button
                                 type="button"
                                 onClick={() =>
@@ -95,40 +90,38 @@ export default function LoginForm() {
                                         "Please contact IT Desk at it-support@singular.co.za or ask an administrator.",
                                     )
                                 }
-                                className="text-xs text-brand-green hover:underline"
+                                className="link text-xs"
                             >
                                 Forgot password?
                             </button>
                         </div>
                         <div className="relative flex items-center">
-                            <Icon name="lock" className="text-[16px] text-outline absolute left-3" />
+                            <Icon name="lock" className="text-base-content/50 absolute left-3 z-10 text-[16px]" />
                             <input
+                                id="login-password"
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 required
                                 autoComplete="current-password"
                                 placeholder="Enter your password"
-                                className="w-full bg-surface-container-high border border-outline-variant/40 pl-9 pr-10 py-2.5 rounded-lg text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-brand-green transition-colors"
+                                className="input w-full pr-10 pl-9"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 text-outline hover:text-on-surface"
+                                className="text-base-content/60 hover:text-base-content absolute right-3 z-10"
                                 title={showPassword ? "Hide password" : "Show password"}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                                 <Icon name={showPassword ? "visibility_off" : "visibility"} className="text-[16px]" />
                             </button>
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={isPending}
-                        className="mt-1 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand-green text-brand-navy font-bold text-sm hover:brightness-90 transition-all active:scale-[0.99] disabled:opacity-50"
-                    >
+                    <button type="submit" disabled={isPending} className="btn btn-primary mt-1 w-full">
                         {isPending ? (
                             <>
-                                <Icon name="sync" className="text-[18px] animate-spin" />
+                                <Icon name="sync" className="animate-spin text-[18px]" />
                                 <span>Signing in...</span>
                             </>
                         ) : (
@@ -138,7 +131,7 @@ export default function LoginForm() {
                 </form>
             </div>
 
-            <p className="mt-6 text-xs text-outline">
+            <p className="text-base-content/60 mt-6 text-xs">
                 {String.fromCharCode(169)} {new Date().getFullYear()} Singular Systems (Pty) Ltd.
             </p>
         </div>
