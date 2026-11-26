@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning 2.0.0](https://semver.org/spec/
 - Editor list profile badge shortened from "Has profile" to "Profile" and account badge changed from "Not linked" (orange) to "Pending" (grey) to better reflect that an unlinked account is a normal state.
 - Status indicators ("Published", "Account active/locked") on the edit profile page resized to match the height of the action buttons on the same row.
 
+### Fixed
+- The employee profile page (`/employees/{id}`) now scrolls: the profile template scrolls under the Back, Export and Edit buttons, which stay at the top. Long profiles were cut off at the bottom of the screen.
+
 ## [0.13.0] - 2026-11-05 - singular-design
 
 ### Changed
